@@ -1,0 +1,18 @@
+package(default_visibility = ["//visibility:public"])
+
+load("//tools:defaults.bzl", "ng_module", "ng_test_library", "ng_web_test_suite", "sass_binary")
+
+ng_module(
+    name = "menu-aim",
+    srcs = glob(
+        ["**/*.ts"],
+        exclude = ["**/*.spec.ts"],
+    ),
+    assets = [] + glob(["**/*.html"]),
+    module_name = "@angular/cdk-experimental/menu-aim",
+    deps = [
+        "@npm//@angular/animations",
+        "@npm//@angular/core",
+        "@npm//rxjs",
+    ],
+)

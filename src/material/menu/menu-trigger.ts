@@ -35,12 +35,14 @@ import {
 } from '@angular/core';
 import {normalizePassiveListenerOptions} from '@angular/cdk/platform';
 import {asapScheduler, merge, of as observableOf, Subscription} from 'rxjs';
-import {delay, filter, take, takeUntil} from 'rxjs/operators';
+import {delay, filter, switchMap, take, takeUntil} from 'rxjs/operators';
 import {MatMenu} from './menu';
 import {throwMatMenuMissingError} from './menu-errors';
 import {MatMenuItem} from './menu-item';
 import {MatMenuPanel} from './menu-panel';
 import {MenuPositionX, MenuPositionY} from './menu-positions';
+import {CdkMenuAim} from "../../cdk-experimental/menu-aim";
+import {MenuAimProvider} from "../../cdk-experimental/menu-aim/menu-aim-provider";
 
 /** Injection token that determines the scroll handling while the menu is open. */
 export const MAT_MENU_SCROLL_STRATEGY =
@@ -168,10 +170,12 @@ export class MatMenuTrigger implements AfterContentInit, OnDestroy {
   constructor(private _overlay: Overlay,
               private _element: ElementRef<HTMLElement>,
               private _viewContainerRef: ViewContainerRef,
+              private _menuAimProvider: MenuAimProvider,
               @Inject(MAT_MENU_SCROLL_STRATEGY) scrollStrategy: any,
               @Optional() private _parentMenu: MatMenu,
               @Optional() @Self() private _menuItemInstance: MatMenuItem,
               @Optional() private _dir: Directionality,
+              @Optional() private readonly menuAim: CdkMenuAim,
               // TODO(crisbeto): make the _focusMonitor required when doing breaking changes.
               // @breaking-change 8.0.0
               private _focusMonitor?: FocusMonitor) {
@@ -539,6 +543,7 @@ export class MatMenuTrigger implements AfterContentInit, OnDestroy {
       // it won't be closed immediately after it is opened.
       .pipe(
         filter(active => active === this._menuItemInstance && !active.disabled),
+        switchMap(() => this._menuAimProvider.possiblyActivateMenuItem(this)),
         delay(0, asapScheduler)
       )
       .subscribe(() => {

@@ -14,6 +14,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {RouterModule} from '@angular/router';
+import {MenuAimModule} from "@angular/cdk-experimental/menu-aim";
 import {MenuDemo} from './menu-demo';
 
 @NgModule({
@@ -24,6 +25,7 @@ import {MenuDemo} from './menu-demo';
     MatIconModule,
     MatMenuModule,
     MatToolbarModule,
+    MenuAimModule,
     RouterModule.forChild([{path: '', component: MenuDemo}]),
   ],
   declarations: [MenuDemo],

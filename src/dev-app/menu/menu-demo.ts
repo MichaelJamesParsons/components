@@ -7,6 +7,7 @@
  */
 
 import {Component} from '@angular/core';
+import {MenuAimProvider} from "@angular/cdk-experimental/menu-aim/menu-aim-provider";
 
 
 @Component({
@@ -28,6 +29,9 @@ export class MenuDemo {
     {text: 'Check voicemail', icon: 'voicemail', disabled: true},
     {text: 'Disable alerts', icon: 'notifications_off'}
   ];
+
+  constructor(private readonly menuAimProvider: MenuAimProvider) {
+  }
 
   select(text: string) { this.selected = text; }
 }

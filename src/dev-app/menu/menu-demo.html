@@ -1,3 +1,4 @@
+<!--
 <div class="demo-menu">
   <div class="demo-menu-section">
     <p>You clicked on: {{ selected }}</p>
@@ -183,6 +184,63 @@
         {{ item.text }}
       </button>
     </mat-menu>
+  </div>
+</div>
+-->
+
+<!--<div class="demo-menu">
+  <div class="demo-menu-section">
+    <mat-toolbar>
+      <button mat-icon-button [mat-menu-trigger-for]="menuAimDemo">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <mat-menu #menuAimDemo="matMenu" menuAim>
+      <button mat-menu-item *ngFor="let item of items">
+        {{ item.text }}
+      </button>
+    </mat-menu>
+  </div>
+</div>-->
+<!--
+  <ul class="native-menu" cdkMenuAim>
+    <li *ngFor="let item of items">
+      <button [cdkMenuAimTriggerFor]="submenu">{{item.text}}</button>
+      <ul #submenu cdkMenuAim class="native-menu">
+        <li *ngFor="let subItem of items">
+          <button>{{subItem.text}}</button>
+        </li>
+      </ul>
+    </li>
+  </ul>
+-->
+
+<div class="demo-menu">
+  <div class="demo-menu-section">
+
+
+
+    <!--<mat-menu #rootMenu="matMenu" menuAim>
+      <button mat-menu-item [matMenuTriggerFor]="subMenu">Power</button>
+      <button mat-menu-item>System settings</button>
+    </mat-menu>
+
+    <mat-menu #subMenu="matMenu">
+      <button mat-menu-item>Shut down</button>
+      <button mat-menu-item>Restart</button>
+      <button mat-menu-item>Hibernate</button>
+    </mat-menu>-->
+
+    <button mat-icon-button [matMenuTriggerFor]="rootMenu">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+
+
+
+
+
+
   </div>
 </div>
 
