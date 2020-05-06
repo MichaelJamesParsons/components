@@ -17,7 +17,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ElementRef,
+  ElementRef, EmbeddedViewRef,
   Inject,
   Input,
   IterableDiffers,
@@ -26,11 +26,11 @@ import {
   ViewEncapsulation
 } from '@angular/core';
 import {
-  CdkVirtualDataSource, CdkVirtualScrollViewport,
+  CdkVirtualDataSource, CdkVirtualForOfContext, CdkVirtualScrollViewport,
 } from "../../cdk/scrolling";
 import {
   combineLatest,
-  isObservable,
+  isObservable, Observable,
   Subject
 } from "rxjs";
 import {
@@ -104,7 +104,7 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
   private _dataSourceSubject = new Subject<DataSource<T>>();
 
   /** Observable that emits the data source's complete data set. */
-  readonly dataStream = this._dataSourceSubject.asObservable()
+  readonly dataStream: Observable<T[] | ReadonlyArray<T>> = this._dataSourceSubject.asObservable()
     .pipe(
         startWith(undefined),
         pairwise(),
@@ -179,16 +179,33 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
     if (range.start < this._renderedRange.start || range.end > this._renderedRange.end) {
       throw Error(`Error: attempted to measure an item that isn't rendered.`);
     }
-    const size = this.getOutletSize(this._headerRowOutlet, orientation)
-        + this.getOutletSize(this._rowOutlet, orientation)
-        + this.getOutletSize(this._footerRowOutlet, orientation);
-    console.log('[table:measureRangeSize]', size);
-    return size;
+
+    // The index into the list of rendered views for the first item in the range.
+    const renderedStartIndex = range.start - this._renderedRange.start;
+    // The length of the range we're measuring.
+    const rangeLen = range.end - range.start;
+
+    const totalSize = this.getOutletSize(
+        this._rowOutlet, renderedStartIndex, rangeLen, orientation);
+    console.log('[table:measureRangeSize]', totalSize);
+    return totalSize;
   }
 
-  private getOutletSize(rowOutlet: RowOutlet, orientation: 'horizontal' | 'vertical'): number {
-    return this._getRenderedRows(rowOutlet).reduce(
-        (sum, row) => getSize(orientation, row), 0);
+  /**
+   * Loop over all root nodes for all items in the range and sum up their size.
+   */
+  private getOutletSize(rowOutlet: RowOutlet, start: number, length: number, orientation: 'horizontal' | 'vertical'): number {
+    let totalSize = 0;
+    let i = length;
+    while (i--) {
+      const view = this._rowOutlet.viewContainer.get(i + start) as
+          EmbeddedViewRef<CdkVirtualForOfContext<T>> | null;
+      let j = view ? view.rootNodes.length : 0;
+      while (j--) {
+        totalSize += getSize(orientation, view!.rootNodes[j]);
+      }
+    }
+    return totalSize;
   }
 }
 
