@@ -198,7 +198,7 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
     let totalSize = 0;
     let i = length;
     while (i--) {
-      const view = this._rowOutlet.viewContainer.get(i + start) as
+      const view = rowOutlet.viewContainer.get(i + start) as
           EmbeddedViewRef<CdkVirtualForOfContext<T>> | null;
       let j = view ? view.rootNodes.length : 0;
       while (j--) {
