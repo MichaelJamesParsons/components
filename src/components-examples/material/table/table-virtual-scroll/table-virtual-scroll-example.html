@@ -1,3 +1,4 @@
+<h2>Native table</h2>
 <cdk-virtual-scroll-viewport itemSize="48" [style.height.px]="300">
   <table mat-virtual-table [dataSource]="dataSource">
     <!-- Position Column -->
@@ -24,10 +25,100 @@
       <td mat-cell *matCellDef="let element"> {{element.symbol}} </td>
     </ng-container>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns;"></tr>
+    <!-- Extra headers -->
+    <ng-container matColumnDef="no-header">
+      <th mat-header-cell *matHeaderCellDef> No. </th>
+    </ng-container>
+    <ng-container matColumnDef="name-header">
+      <th mat-header-cell *matHeaderCellDef> Name </th>
+    </ng-container>
+    <ng-container matColumnDef="weight-header">
+      <th mat-header-cell *matHeaderCellDef> Weight </th>
+    </ng-container>
+    <ng-container matColumnDef="symbol-header">
+      <th mat-header-cell *matHeaderCellDef> Symbol </th>
+    </ng-container>
+    <!-- /extra headers -->
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+    <tr mat-header-row *matHeaderRowDef="['no-header', 'name-header', 'weight-header', 'symbol-header']; sticky: true"
+        class="example-second-header-row">
+    </tr>
+
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>
 </cdk-virtual-scroll-viewport>
+
+
+
+
+
+
+<h2>Div table</h2>
+<cdk-virtual-scroll-viewport itemSize="48" [style.height.px]="300">
+  <mat-virtual-table [dataSource]="dataSource">
+    <!-- Position Column -->
+    <ng-container matColumnDef="position">
+      <mat-header-cell *matHeaderCellDef> No. </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.position}} </mat-cell>
+    </ng-container>
+
+    <!-- Name Column -->
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.name}} </mat-cell>
+    </ng-container>
+
+    <!-- Weight Column -->
+    <ng-container matColumnDef="weight">
+      <mat-header-cell *matHeaderCellDef> Weight </mat-header-cell>
+      <div mat-cell *matCellDef="let element"> {{element.weight}} </div>
+    </ng-container>
+
+    <!-- Symbol Column -->
+    <ng-container matColumnDef="symbol">
+      <mat-header-cell *matHeaderCellDef> Symbol </mat-header-cell>
+      <mat-cell *matCellDef="let element"> {{element.symbol}} </mat-cell>
+    </ng-container>
+
+    <!-- Extra headers -->
+    <ng-container matColumnDef="no-header">
+      <mat-header-cell *matHeaderCellDef> No. </mat-header-cell>
+    </ng-container>
+    <ng-container matColumnDef="name-header">
+      <mat-header-cell *matHeaderCellDef> Name </mat-header-cell>
+    </ng-container>
+    <ng-container matColumnDef="weight-header">
+      <mat-header-cell *matHeaderCellDef> Weight </mat-header-cell>
+    </ng-container>
+    <ng-container matColumnDef="symbol-header">
+      <mat-header-cell *matHeaderCellDef> Symbol </mat-header-cell>
+    </ng-container>
+    <!-- /extra headers -->
+
+    <mat-header-row  *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+    <mat-header-row *matHeaderRowDef="['no-header', 'name-header', 'weight-header', 'symbol-header']; sticky: true"
+        class="example-second-header-row">
+    </mat-header-row>
+
+    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+  </mat-virtual-table>
+</cdk-virtual-scroll-viewport>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <!--
 ## virtualForOf

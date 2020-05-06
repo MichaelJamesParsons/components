@@ -80,7 +80,7 @@ export class MatTable<T> extends CdkTable<T> {
  * {@link CdkVirtualForOf} to virtualize rendering of large data sets.
  */
 @Component({
-  selector: 'table[mat-virtual-table]',
+  selector: 'mat-virtual-table, table[mat-virtual-table]',
   exportAs: 'matVirtualTable',
   template: CDK_TABLE_TEMPLATE,
   styleUrls: ['table.css'],
@@ -143,6 +143,10 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
       _platform: Platform) {
     super(_differs, _changeDetectorRef, _elementRef, role, _dir, _document, _platform);
 
+    this._viewport.elementScrolled().subscribe(event => {
+      this.renderStickyRows((event.target as HTMLElement).scrollTop);
+    });
+
     /**
      * Emits a slice of {@link dataStream} containing items within
      * {@link _renderedRange}.
@@ -169,6 +173,10 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
     this._destroyed.next();
     this._destroyed.complete();
     super.ngOnDestroy();
+  }
+
+  private renderStickyRows(fromTop: number) {
+    console.log('scrolled:', fromTop);
   }
 
   measureRangeSize(range: ListRange, orientation: 'horizontal' | 'vertical'): number {
