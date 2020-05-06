@@ -18,6 +18,7 @@ import {
   CdkFooterCellDef, CdkFooterCell
 } from './cell';
 import {CdkTextColumn} from './text-column';
+import {CdkTableVirtualScroll} from "./table-virtual-scroll";
 
 const EXPORTED_DECLARATIONS = [
   CdkTable,
@@ -41,6 +42,7 @@ const EXPORTED_DECLARATIONS = [
   CdkTextColumn,
   CdkNoDataRow,
   NoDataRowOutlet,
+  CdkTableVirtualScroll,
 ];
 
 @NgModule({

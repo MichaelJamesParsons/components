@@ -34,6 +34,10 @@ import {Observable, Subject, of as observableOf, isObservable} from 'rxjs';
 import {pairwise, shareReplay, startWith, switchMap, takeUntil} from 'rxjs/operators';
 import {CdkVirtualScrollViewport} from './virtual-scroll-viewport';
 
+export interface CdkVirtualDataSource<T> {
+  dataStream: Observable<T[] | ReadonlyArray<T>>;
+  measureRangeSize(range: ListRange, orientation: 'horizontal' | 'vertical'): number;
+}
 
 /** The context for an item rendered by `CdkVirtualForOf` */
 export type CdkVirtualForOfContext<T> = {
@@ -74,7 +78,7 @@ function getSize(orientation: 'horizontal' | 'vertical', node: Node): number {
 @Directive({
   selector: '[cdkVirtualFor][cdkVirtualForOf]',
 })
-export class CdkVirtualForOf<T> implements CollectionViewer, DoCheck, OnDestroy {
+export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionViewer, DoCheck, OnDestroy {
   /** Emits when the rendered view of the data changes. */
   viewChange = new Subject<ListRange>();
 

@@ -34,7 +34,7 @@ import {
 import {auditTime, startWith, takeUntil} from 'rxjs/operators';
 import {ScrollDispatcher} from './scroll-dispatcher';
 import {CdkScrollable, ExtendedScrollToOptions} from './scrollable';
-import {CdkVirtualForOf} from './virtual-for-of';
+import {CdkVirtualDataSource} from './virtual-for-of';
 import {VIRTUAL_SCROLL_STRATEGY, VirtualScrollStrategy} from './virtual-scroll-strategy';
 import {ViewportRuler} from './viewport-ruler';
 
@@ -132,7 +132,7 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
   private _viewportSize = 0;
 
   /** the currently attached CdkVirtualForOf. */
-  private _forOf: CdkVirtualForOf<any> | null;
+  private _forOf: CdkVirtualDataSource<any> | null;
 
   /** The last rendered content offset that was set. */
   private _renderedContentOffset = 0;
@@ -216,7 +216,7 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
   }
 
   /** Attaches a `CdkVirtualForOf` to this viewport. */
-  attach(forOf: CdkVirtualForOf<any>) {
+  attach(forOf: CdkVirtualDataSource<any>) {
     if (this._forOf) {
       throw Error('CdkVirtualScrollViewport is already attached.');
     }
@@ -374,6 +374,7 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
    * not rendered.
    */
   measureRangeSize(range: ListRange): number {
+    console.log('[virtual-scroll-viewport:measureRangeSize]')
     if (!this._forOf) {
       return 0;
     }

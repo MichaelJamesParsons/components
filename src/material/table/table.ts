@@ -6,8 +6,49 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {CDK_TABLE_TEMPLATE, CdkTable, CDK_TABLE} from '@angular/cdk/table';
-import {ChangeDetectionStrategy, Component, ViewEncapsulation} from '@angular/core';
+import {
+  CDK_TABLE_TEMPLATE,
+  CdkTable,
+  CDK_TABLE,
+  DataSource, CdkTableDataSourceInput, RowOutlet
+} from '@angular/cdk/table';
+import {
+  Attribute,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  Inject,
+  Input,
+  IterableDiffers,
+  OnDestroy,
+  Optional, SkipSelf,
+  ViewEncapsulation
+} from '@angular/core';
+import {
+  CdkVirtualDataSource, CdkVirtualScrollViewport,
+} from "../../cdk/scrolling";
+import {
+  combineLatest,
+  isObservable,
+  Subject
+} from "rxjs";
+import {
+  ArrayDataSource,
+  isDataSource,
+  ListRange
+} from "@angular/cdk/collections";
+import {
+  pairwise,
+  shareReplay,
+  startWith,
+  switchMap,
+  takeUntil,
+  map,
+} from "rxjs/operators";
+import {Directionality} from "@angular/cdk/bidi";
+import {DOCUMENT} from "@angular/common";
+import {Platform} from "@angular/cdk/platform";
 
 /**
  * Wrapper for the CdkTable with Material design styles.
@@ -32,4 +73,131 @@ import {ChangeDetectionStrategy, Component, ViewEncapsulation} from '@angular/co
 export class MatTable<T> extends CdkTable<T> {
   /** Overrides the sticky CSS class set by the `CdkTable`. */
   protected stickyCssClass = 'mat-table-sticky';
+}
+
+/**
+ * A {@link MatTable} that internally behaves similar to
+ * {@link CdkVirtualForOf} to virtualize rendering of large data sets.
+ */
+@Component({
+  selector: 'table[mat-virtual-table]',
+  exportAs: 'matVirtualTable',
+  template: CDK_TABLE_TEMPLATE,
+  styleUrls: ['table.css'],
+  host: {
+    'class': 'mat-virtual-table mat-mdc-table mdc-data-table__table',
+  },
+  providers: [{provide: CdkTable, useExisting: MatVirtualTable}],
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.Default,
+})
+export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSource<T>, OnDestroy {
+  /** Overrides the sticky CSS class set by the `CdkTable`. */
+  protected stickyCssClass = 'mat-table-sticky';
+
+  private _destroyed = new Subject<void>();
+
+  /** The currently rendered range of indices. */
+  private _renderedRange: ListRange;
+
+  /** Subject that emits when a new DataSource instance is given. */
+  private _dataSourceSubject = new Subject<DataSource<T>>();
+
+  /** Observable that emits the data source's complete data set. */
+  readonly dataStream = this._dataSourceSubject.asObservable()
+    .pipe(
+        startWith(undefined),
+        pairwise(),
+        switchMap(([previous, current]) => {
+          if (previous) {
+            previous.disconnect(this);
+          }
+          return current!.connect(this);
+        }), shareReplay(1));
+
+  @Input()
+  get dataSource(): CdkTableDataSourceInput<T> {
+    return this._dataSource;
+  }
+
+  set dataSource(dataSource: CdkTableDataSourceInput<T>) {
+    let nextDataSource: DataSource<T>;
+    if (isDataSource(dataSource)) {
+      nextDataSource = dataSource;
+    } else {
+      // Slice the value if its an NgIterable to ensure we're working with an array.
+      nextDataSource = new ArrayDataSource<T>(
+          isObservable(dataSource) ? dataSource : Array.prototype.slice.call(dataSource || []));
+    }
+    this._dataSourceSubject.next(nextDataSource);
+  }
+
+  constructor(
+      protected readonly _differs: IterableDiffers,
+      protected readonly _changeDetectorRef: ChangeDetectorRef,
+      protected readonly _elementRef: ElementRef,
+      @Attribute('role') role: string,
+      @Optional() protected readonly _dir: Directionality,
+      @Inject(DOCUMENT) _document: any,
+      @SkipSelf() private _viewport: CdkVirtualScrollViewport,
+      _platform: Platform) {
+    super(_differs, _changeDetectorRef, _elementRef, role, _dir, _document, _platform);
+
+    /**
+     * Emits a slice of {@link dataStream} containing items within
+     * {@link _renderedRange}.
+     */
+    const renderedDataStream = combineLatest([
+      this.dataStream,
+      this._viewport.renderedRangeStream.pipe(startWith(null)),
+    ]).pipe(map(([data, range]) => {
+      if (!range) {
+        return [];
+      }
+      this._renderedRange = range;
+      const slice = data.slice(range.start, range.end);
+      console.log('table:renderedDataStream', slice);
+      return slice;
+    }), shareReplay(1), takeUntil(this._destroyed));
+
+    /** Forward slice of data source to the table. */
+    this.setDataSource(renderedDataStream);
+    this._viewport.attach(this);
+  }
+
+  ngOnDestroy(): void {
+    this._destroyed.next();
+    this._destroyed.complete();
+    super.ngOnDestroy();
+  }
+
+  measureRangeSize(range: ListRange, orientation: 'horizontal' | 'vertical'): number {
+    if (range.start >= range.end) {
+      console.log('[table:measureRangeSize]', 0);
+      return 0;
+    }
+    if (range.start < this._renderedRange.start || range.end > this._renderedRange.end) {
+      throw Error(`Error: attempted to measure an item that isn't rendered.`);
+    }
+    const size = this.getOutletSize(this._headerRowOutlet, orientation)
+        + this.getOutletSize(this._rowOutlet, orientation)
+        + this.getOutletSize(this._footerRowOutlet, orientation);
+    console.log('[table:measureRangeSize]', size);
+    return size;
+  }
+
+  private getOutletSize(rowOutlet: RowOutlet, orientation: 'horizontal' | 'vertical'): number {
+    return this._getRenderedRows(rowOutlet).reduce(
+        (sum, row) => getSize(orientation, row), 0);
+  }
+}
+
+/** Helper to extract size from a DOM Node. */
+function getSize(orientation: 'horizontal' | 'vertical', node: Node): number {
+  const el = node as Element;
+  if (!el.getBoundingClientRect) {
+    return 0;
+  }
+  const rect = el.getBoundingClientRect();
+  return orientation == 'horizontal' ? rect.width : rect.height;
 }

@@ -1,0 +1,69 @@
+<cdk-virtual-scroll-viewport autosize [style.height.px]="300">
+  <table #virtualTable mat-virtual-table [dataSource]="dataSource" class="mat-elevation-z8">
+    <!-- Position Column -->
+    <ng-container matColumnDef="position">
+      <th mat-header-cell *matHeaderCellDef> No. </th>
+      <td mat-cell *matCellDef="let element"> {{element.position}} </td>
+    </ng-container>
+
+    <!-- Name Column -->
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef> Name </th>
+      <td mat-cell *matCellDef="let element"> {{element.name}} </td>
+    </ng-container>
+
+    <!-- Weight Column -->
+    <ng-container matColumnDef="weight">
+      <th mat-header-cell *matHeaderCellDef> Weight </th>
+      <td mat-cell *matCellDef="let element"> {{element.weight}} </td>
+    </ng-container>
+
+    <!-- Symbol Column -->
+    <ng-container matColumnDef="symbol">
+      <th mat-header-cell *matHeaderCellDef> Symbol </th>
+      <td mat-cell *matCellDef="let element"> {{element.symbol}} </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+</cdk-virtual-scroll-viewport>
+
+<!--
+## virtualForOf
+- Manages data source subscriptions.
+- Takes a slice of the data set based on the range.
+- Add/remove/move rows in view container (CDK table already does this).
+- Updates VirtualForOfContext for each item.
+- Caches views
+-->
+
+
+<!--
+Thoughts:
+
+1. Table scroll strategy to measure height, range, etc.
+2. Provider that emits data in updated range. This allows reuse of
+   CDK table caching.
+
+
+- Inject a provider to override row rendering strategy
+- Create a table scroll strategy to configure offsets for header(s) and
+  footer(s).
+
+
+Render cell:
+_renderRow -> _getCellTemplates()
+-->
+
+<!--
+<cdk-virtual-scroll-viewport
+  autosize [minBufferPx]="minBufferPx" [maxBufferPx]="maxBufferPx"
+  [orientation]="orientation" [style.height.px]="viewportHeight"
+  [style.width.px]="viewportWidth">
+<div class="item" *cdkVirtualFor="let size of items; let i = index" [style.height.px]="size"
+     [style.width.px]="size">
+  {{i}} - {{size}}
+</div>
+</cdk-virtual-scroll-viewport>
+-->

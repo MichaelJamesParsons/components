@@ -11,6 +11,8 @@ import {MatSortModule} from '@angular/material/sort';
 import {MatTableModule} from '@angular/material/table';
 import {DragDropModule} from '@angular/cdk/drag-drop';
 import {CdkTableModule} from '@angular/cdk/table';
+import {ScrollingModule} from '@angular/cdk/scrolling';
+import {ScrollingModule as ExperimentalScrollingModule} from '@angular/cdk-experimental/scrolling';
 
 import {TableBasicFlexExample} from './table-basic-flex/table-basic-flex-example';
 import {TableBasicExample} from './table-basic/table-basic-example';
@@ -40,6 +42,7 @@ import {
 import {TableTextColumnExample} from './table-text-column/table-text-column-example';
 import {TableWrappedExample, WrapperTable} from './table-wrapped/table-wrapped-example';
 import {TableReorderableExample} from './table-reorderable/table-reorderable-example';
+import {TableVirtualScrollExample} from "./table-virtual-scroll/table-virtual-scroll-example";
 
 export {
   TableBasicExample,          TableBasicFlexExample,
@@ -53,6 +56,7 @@ export {
   TableStickyFooterExample,   TableStickyHeaderExample,
   TableTextColumnExample,     TableTextColumnAdvancedExample,
   TableWrappedExample,        WrapperTable,
+    TableVirtualScrollExample,
   TableReorderableExample,
 };
 
@@ -67,7 +71,7 @@ const EXAMPLES = [
   TableStickyComplexExample,  TableStickyComplexFlexExample,
   TableStickyFooterExample,   TableStickyHeaderExample,
   TableTextColumnExample,     TableTextColumnAdvancedExample,
-  TableWrappedExample,        WrapperTable,
+  TableVirtualScrollExample, TableWrappedExample,        WrapperTable,
   TableReorderableExample,
 ];
 
@@ -85,6 +89,8 @@ const EXAMPLES = [
     MatTableModule,
     CdkTableModule,
     DragDropModule,
+    ScrollingModule,
+    ExperimentalScrollingModule,
   ],
   declarations: EXAMPLES,
   exports: EXAMPLES,

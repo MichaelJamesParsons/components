@@ -78,7 +78,7 @@ export interface RowOutlet {
  * Union of the types that can be set as the data source for a `CdkTable`.
  * @docs-private
  */
-type CdkTableDataSourceInput<T> =
+export type CdkTableDataSourceInput<T> =
     DataSource<T>|Observable<ReadonlyArray<T>|T[]>|ReadonlyArray<T>|T[];
 
 /**
@@ -353,11 +353,15 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     return this._dataSource;
   }
   set dataSource(dataSource: CdkTableDataSourceInput<T>) {
+    this.setDataSource(dataSource);
+  }
+
+  protected setDataSource(dataSource: CdkTableDataSourceInput<T>) {
     if (this._dataSource !== dataSource) {
       this._switchDataSource(dataSource);
     }
   }
-  private _dataSource: CdkTableDataSourceInput<T>;
+  protected _dataSource: CdkTableDataSourceInput<T>;
 
   /**
    * Whether to allow multiple rows per data object by evaluating which rows evaluate their 'when'
