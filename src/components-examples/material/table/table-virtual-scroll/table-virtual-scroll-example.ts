@@ -21,7 +21,7 @@ const ELEMENT_DATA: PeriodicElement[] = [
 ];
 
 const EXPANDED_ELEMENT_DATA: PeriodicElement[] = [];
-for (let x = 0; x < 10; x++) {
+for (let x = 0; x < 100; x++) {
   for (const entry of ELEMENT_DATA) {
     EXPANDED_ELEMENT_DATA.push({...entry, position: entry.position + (10 * x)});
   }
@@ -38,4 +38,5 @@ for (let x = 0; x < 10; x++) {
 export class TableVirtualScrollExample {
   displayedColumns: string[] = ['position', 'name', 'weight', 'symbol'];
   dataSource = EXPANDED_ELEMENT_DATA;
+  trackBy = (index: number, el: PeriodicElement) => el.position;
 }

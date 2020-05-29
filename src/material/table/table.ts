@@ -6,49 +6,15 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {
-  CDK_TABLE_TEMPLATE,
-  CdkTable,
-  CDK_TABLE,
-  DataSource, CdkTableDataSourceInput, RowOutlet
-} from '@angular/cdk/table';
-import {
-  Attribute,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ElementRef, EmbeddedViewRef,
-  Inject,
-  Input,
-  IterableDiffers,
-  OnDestroy,
-  Optional, SkipSelf,
-  ViewEncapsulation
-} from '@angular/core';
-import {
-  CdkVirtualDataSource, CdkVirtualForOfContext, CdkVirtualScrollViewport,
-} from "../../cdk/scrolling";
-import {
-  combineLatest,
-  isObservable, Observable,
-  Subject
-} from "rxjs";
-import {
-  ArrayDataSource,
-  isDataSource,
-  ListRange
-} from "@angular/cdk/collections";
-import {
-  pairwise,
-  shareReplay,
-  startWith,
-  switchMap,
-  takeUntil,
-  map,
-} from "rxjs/operators";
-import {Directionality} from "@angular/cdk/bidi";
-import {DOCUMENT} from "@angular/common";
-import {Platform} from "@angular/cdk/platform";
+import {CDK_TABLE_TEMPLATE, CdkTable, CDK_TABLE, DataSource, CdkTableDataSourceInput, RowOutlet} from '@angular/cdk/table';
+import {Attribute, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EmbeddedViewRef, Inject, Input, IterableDiffers, NgZone, OnDestroy, Optional, SimpleChanges, SkipSelf, ViewEncapsulation} from '@angular/core';
+import {CdkVirtualDataSource, CdkVirtualForOfContext, CdkVirtualScrollViewport} from '../../cdk/scrolling';
+import {BehaviorSubject, combineLatest, isObservable, Observable, Subject} from 'rxjs';
+import {ArrayDataSource, isDataSource, ListRange} from '@angular/cdk/collections';
+import {pairwise, shareReplay, startWith, switchMap, map} from 'rxjs/operators';
+import {Directionality} from '@angular/cdk/bidi';
+import {DOCUMENT} from '@angular/common';
+import {Platform} from '@angular/cdk/platform';
 
 /**
  * Wrapper for the CdkTable with Material design styles.
@@ -85,10 +51,15 @@ export class MatTable<T> extends CdkTable<T> {
   template: CDK_TABLE_TEMPLATE,
   styleUrls: ['table.css'],
   host: {
-    'class': 'mat-virtual-table mat-mdc-table mdc-data-table__table',
+    'class': 'mat-table mat-virtual-table',
   },
-  providers: [{provide: CdkTable, useExisting: MatVirtualTable}],
+  providers: [
+    {provide: CdkTable, useExisting: MatVirtualTable},
+    {provide: CDK_TABLE, useExisting: MatVirtualTable}
+  ],
   encapsulation: ViewEncapsulation.None,
+  // See note on CdkTable for explanation on why this uses the default change detection strategy.
+  // tslint:disable-next-line:validate-decorators
   changeDetection: ChangeDetectionStrategy.Default,
 })
 export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSource<T>, OnDestroy {
@@ -103,17 +74,29 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
   /** Subject that emits when a new DataSource instance is given. */
   private _dataSourceSubject = new Subject<DataSource<T>>();
 
+  /**
+   * A map of a header row's index and its offset from the top of the table when
+   * scrolled 0px.
+   */
+  private headerRowOffsetCache: number[] = [];
+
+  /**
+   * A cache of the cells for each header row. Only used for the native table.
+   */
+  private headerRowCellsCache: Array<HTMLElement[]> = [];
+
   /** Observable that emits the data source's complete data set. */
-  readonly dataStream: Observable<T[] | ReadonlyArray<T>> = this._dataSourceSubject.asObservable()
-    .pipe(
-        startWith(undefined),
-        pairwise(),
-        switchMap(([previous, current]) => {
-          if (previous) {
-            previous.disconnect(this);
-          }
-          return current!.connect(this);
-        }), shareReplay(1));
+  readonly dataStream: Observable<T[] | ReadonlyArray<T>> =
+      this._dataSourceSubject.asObservable()
+        .pipe(
+            startWith(undefined),
+            pairwise(),
+            switchMap(([previous, current]) => {
+              if (previous) {
+                previous.disconnect(this);
+              }
+              return current!.connect(this);
+            }), shareReplay(1));
 
   @Input()
   get dataSource(): CdkTableDataSourceInput<T> {
@@ -140,31 +123,36 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
       @Optional() protected readonly _dir: Directionality,
       @Inject(DOCUMENT) _document: any,
       @SkipSelf() private _viewport: CdkVirtualScrollViewport,
+      private zone: NgZone,
       _platform: Platform) {
     super(_differs, _changeDetectorRef, _elementRef, role, _dir, _document, _platform);
 
-    this._viewport.elementScrolled().subscribe(event => {
-      this.renderStickyRows((event.target as HTMLElement).scrollTop);
-    });
+    let offsetFromTop = -1;
+    this._viewport.tableScrollHandler = () => {
+      const nextOffset = this._viewport.getOffsetToRenderedContentStart() || 0;
+      if (nextOffset !== offsetFromTop) {
+        // TODO only call when sticky headers are enabled
+        this.renderStickyRows(nextOffset);
+        offsetFromTop = nextOffset;
+      }
+    };
 
+    // FIXME unsubscribe
     /**
      * Emits a slice of {@link dataStream} containing items within
      * {@link _renderedRange}.
      */
-    const renderedDataStream = combineLatest([
-      this.dataStream,
-      this._viewport.renderedRangeStream.pipe(startWith(null)),
-    ]).pipe(map(([data, range]) => {
-      if (!range) {
-        return [];
-      }
-      this._renderedRange = range;
-      const slice = data.slice(range.start, range.end);
-      console.log('table:renderedDataStream', slice);
-      return slice;
-    }), shareReplay(1), takeUntil(this._destroyed));
+    const renderedDataStream = this.dataStream.pipe(
+        switchMap(data => this._viewport.renderedRangeStream.pipe(
+            map(range => {
+              if (!range) {
+                return [];
+              }
+              this._renderedRange = range;
+              return data.slice(range.start, range.end);
+            }))));
 
-    /** Forward slice of data source to the table. */
+    // Forward slice of data source to the table.
     this.setDataSource(renderedDataStream);
     this._viewport.attach(this);
   }
@@ -175,28 +163,72 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
     super.ngOnDestroy();
   }
 
-  private renderStickyRows(fromTop: number) {
-    console.log('scrolled:', fromTop);
+  private renderStickyRows(offsetFromTop: number) {
+    if (this._isNativeHtmlTable) {
+      this.renderNativeHeaderRows(offsetFromTop);
+    } else {
+      this.renderFlexHeaderRows(offsetFromTop);
+    }
   }
 
+  /**
+   * Calculates the offset of each header row from the top of the table, then
+   * updates their position to that offset. For native rows, the offset is
+   * applied to the header row's cells. This calculation is only applicable to
+   * native tables.
+   */
+  private renderNativeHeaderRows(offsetFromTop: number) {
+    const headers = this._getRenderedRows(this._headerRowOutlet);
+
+    if (headers.length !== this.headerRowOffsetCache.length) {
+      this.headerRowCellsCache = headers.map(header =>
+          header.getElementsByClassName(this.stickyCssClass) as unknown as HTMLElement[]);
+      this.headerRowOffsetCache = this.headerRowCellsCache.map(headerCells =>
+          parseInt((headerCells[0] as HTMLElement).style.top, 10));
+    }
+
+    for (const [index, headerCells] of this.headerRowCellsCache.entries()) {
+      for (const cell of headerCells) {
+        const offset = offsetFromTop - this.headerRowOffsetCache[index];
+        cell.style.top = `-${offset}px`;
+      }
+    }
+  }
+
+  /**
+   * Calculates the offset of each header row from the top of the table, then
+   * updates their position to that offset. This calculation is only applicable
+   * to flex tables.
+   */
+  private renderFlexHeaderRows(offsetFromTop: number) {
+    const headers = this._getRenderedRows(this._headerRowOutlet);
+
+    if (headers.length !== this.headerRowOffsetCache.length) {
+      this.headerRowOffsetCache = headers.map(
+          header => parseInt(header.style.top, 10));
+    }
+
+    for (const [index, header] of headers.entries()) {
+      const offset = offsetFromTop - this.headerRowOffsetCache[index];
+      header.style.top = `-${offset}px`;
+    }
+  }
+
+  // FIXME verify calculations are correct with footer rows
+  /** Calculates how many entries from the data set can fit in the viewport. */
   measureRangeSize(range: ListRange, orientation: 'horizontal' | 'vertical'): number {
     if (range.start >= range.end) {
-      console.log('[table:measureRangeSize]', 0);
       return 0;
     }
     if (range.start < this._renderedRange.start || range.end > this._renderedRange.end) {
       throw Error(`Error: attempted to measure an item that isn't rendered.`);
     }
 
-    // The index into the list of rendered views for the first item in the range.
     const renderedStartIndex = range.start - this._renderedRange.start;
-    // The length of the range we're measuring.
     const rangeLen = range.end - range.start;
 
-    const totalSize = this.getOutletSize(
+    return this.getOutletSize(
         this._rowOutlet, renderedStartIndex, rangeLen, orientation);
-    console.log('[table:measureRangeSize]', totalSize);
-    return totalSize;
   }
 
   /**

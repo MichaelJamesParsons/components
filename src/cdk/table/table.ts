@@ -292,7 +292,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   private _cachedRenderRowsMap = new Map<T, WeakMap<CdkRowDef<T>, RenderRow<T>[]>>();
 
   /** Whether the table is applied to a native `<table>`. */
-  private _isNativeHtmlTable: boolean;
+  protected _isNativeHtmlTable: boolean;
 
   /**
    * Utility class that is responsible for applying the appropriate sticky positioning styles to
@@ -640,6 +640,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     const stickyStates = this._headerRowDefs.map(def => def.sticky);
     this._stickyStyler.clearStickyPositioning(headerRows, ['top']);
     this._stickyStyler.stickRows(headerRows, stickyStates, 'top');
+    console.log('sticking headers');
 
     // Reset the dirty state of the sticky input change since it has been used.
     this._headerRowDefs.forEach(def => def.resetStickyChanged());

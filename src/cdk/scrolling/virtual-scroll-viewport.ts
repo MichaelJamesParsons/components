@@ -37,6 +37,7 @@ import {CdkScrollable, ExtendedScrollToOptions} from './scrollable';
 import {CdkVirtualDataSource} from './virtual-for-of';
 import {VIRTUAL_SCROLL_STRATEGY, VirtualScrollStrategy} from './virtual-scroll-strategy';
 import {ViewportRuler} from './viewport-ruler';
+import {LatencyAuditor} from '@angular/cdk/scrolling/_perf_util_DO_NOT_SUBMIT';
 
 /** Checks if the given ranges are equal. */
 function rangesEqual(r1: ListRange, r2: ListRange): boolean {
@@ -151,6 +152,12 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
 
   /** Subscription to changes in the viewport size. */
   private _viewportChanges = Subscription.EMPTY;
+
+  /**
+   * FIXME This is a hack to listen for scroll changes synchronously. Find a
+   *  better solution.
+   */
+  tableScrollHandler = () => {};
 
   constructor(public elementRef: ElementRef<HTMLElement>,
               private _changeDetectorRef: ChangeDetectorRef,
@@ -277,10 +284,14 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
 
   /** Sets the currently rendered range of indices. */
   setRenderedRange(range: ListRange) {
+    const audit = LatencyAuditor.beginAudit('FS', false);
     if (!rangesEqual(this._renderedRange, range)) {
-      this._renderedRangeSubject.next(this._renderedRange = range);
+      this._renderedRange = range;
+      this._renderedRangeSubject.next(this._renderedRange);
+      audit.recordAndReset('rrs');
       this._markChangeDetectionNeeded(() => this._scrollStrategy.onContentRendered());
     }
+    audit.stop();
   }
 
   /**
@@ -303,6 +314,10 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
     const axisDirection = isHorizontal && isRtl ? -1 : 1;
     let transform = `translate${axis}(${Number(axisDirection * offset)}px)`;
     this._renderedContentOffset = offset;
+
+    // FIXME This is a hack. See JSDoc for context.
+    this.tableScrollHandler();
+
     if (to === 'to-end') {
       transform += ` translate${axis}(-100%)`;
       // The viewport should rewrite this as a `to-start` offset on the next render cycle. Otherwise
@@ -374,7 +389,6 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
    * not rendered.
    */
   measureRangeSize(range: ListRange): number {
-    console.log('[virtual-scroll-viewport:measureRangeSize]')
     if (!this._forOf) {
       return 0;
     }
