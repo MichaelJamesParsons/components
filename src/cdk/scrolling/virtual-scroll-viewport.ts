@@ -286,8 +286,7 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
   setRenderedRange(range: ListRange) {
     const audit = LatencyAuditor.beginAudit('FS', false);
     if (!rangesEqual(this._renderedRange, range)) {
-      this._renderedRange = range;
-      this._renderedRangeSubject.next(this._renderedRange);
+      this._renderedRangeSubject.next(this._renderedRange = range);
       audit.recordAndReset('rrs');
       this._markChangeDetectionNeeded(() => this._scrollStrategy.onContentRendered());
     }

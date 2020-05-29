@@ -640,7 +640,6 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     const stickyStates = this._headerRowDefs.map(def => def.sticky);
     this._stickyStyler.clearStickyPositioning(headerRows, ['top']);
     this._stickyStyler.stickRows(headerRows, stickyStates, 'top');
-    console.log('sticking headers');
 
     // Reset the dirty state of the sticky input change since it has been used.
     this._headerRowDefs.forEach(def => def.resetStickyChanged());
