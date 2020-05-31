@@ -20,9 +20,9 @@ export class LatencyAuditor {
     this.writeEntry(desc, performance.now());
   }
 
-  recordAndReset(desc: string): void {
+  recordAndReset(desc: string, extra?: any): void {
     const now = performance.now();
-    this.writeEntry(desc, now);
+    this.writeEntry(desc, now, extra);
     this.activeTimestamp = now;
   }
 
@@ -33,11 +33,11 @@ export class LatencyAuditor {
     }
   }
 
-  private writeEntry(desc: string, end: number) {
+  private writeEntry(desc: string, end: number, extra: any = '') {
     const diff = Math.round(end - this.activeTimestamp);
 
     if (diff !== 0 || this.auditZeroLatency) {
-      this.buffer.push(`${this.context}:${desc} took ${diff}ms`);
+      this.buffer.push(`${this.context}:${desc} ${diff}ms, ${extra}`);
     }
   }
 }

@@ -33,6 +33,7 @@ import {
 import {Observable, Subject, of as observableOf, isObservable} from 'rxjs';
 import {pairwise, shareReplay, startWith, switchMap, takeUntil} from 'rxjs/operators';
 import {CdkVirtualScrollViewport} from './virtual-scroll-viewport';
+import {RecycleRendererStrategy} from '@angular/cdk/scrolling/list_renderer';
 
 export interface CdkVirtualDataSource<T> {
   dataStream: Observable<T[] | ReadonlyArray<T>>;
@@ -85,6 +86,7 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
   /** Subject that emits when a new DataSource instance is given. */
   private _dataSourceChanges = new Subject<DataSource<T>>();
 
+  // @Internal
   /** The DataSource to display. */
   @Input()
   get cdkVirtualForOf(): DataSource<T> | Observable<T[]> | NgIterable<T> | null | undefined {
@@ -102,6 +104,7 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
   }
   _cdkVirtualForOf: DataSource<T> | Observable<T[]> | NgIterable<T> | null | undefined;
 
+  // @Internal
   /**
    * The `TrackByFunction` to use for tracking changes. The `TrackByFunction` takes the index and
    * the item and produces a value to be used as the item's identity when tracking changes.
@@ -171,6 +174,8 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
 
   private _destroyed = new Subject<void>();
 
+  private readonly iterableRendererStrategy = new RecycleRendererStrategy<T, CdkVirtualForOfContext<T>>();
+
   constructor(
       /** The view container to add items to. */
       private _viewContainerRef: ViewContainerRef,
@@ -235,7 +240,13 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
       if (!changes) {
         this._updateContext();
       } else {
-        this._applyChanges(changes);
+        this.iterableRendererStrategy.applyChanges(
+            changes,
+            this._viewContainerRef,
+            (index, viewContainerRef) => this._createEmbeddedViewAt(index),
+            (viewContainerRef) => this.updateVariableContext(viewContainerRef)
+        );
+        // this._applyChanges(changes);
       }
       this._needsUpdate = false;
     }
@@ -254,8 +265,19 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
     for (let view of this._templateCache) {
       view.destroy();
     }
+    this._dataSourceChanges.next();
+    this._dataSourceChanges.complete();
+    this.viewChange.complete();
+
+    this._destroyed.next();
+    this._destroyed.complete();
+
+    for (let view of this._templateCache) {
+      view.destroy();
+    }
   }
 
+  // @Internal
   /** React to scroll state changes in the viewport. */
   private _onRenderedDataChange() {
     if (!this._renderedRange) {
@@ -268,6 +290,7 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
     this._needsUpdate = true;
   }
 
+  // @Internal
   /** Swap out one `DataSource` for another. */
   private _changeDataSource(oldDs: DataSource<T> | null, newDs: DataSource<T> | null):
     Observable<T[] | ReadonlyArray<T>> {
@@ -303,7 +326,7 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
         const view = this._insertViewForNewItem(currentIndex!);
         view.context.$implicit = record.item;
       } else if (currentIndex == null) {  // Item removed.
-        this._cacheView(this._detachView(adjustedPreviousIndex !));
+        this._cacheView(this._detachView(adjustedPreviousIndex!));
       } else {  // Item moved.
         const view = this._viewContainerRef.get(adjustedPreviousIndex!) as
             EmbeddedViewRef<CdkVirtualForOfContext<T>>;
@@ -326,6 +349,17 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
       const view = this._viewContainerRef.get(i) as EmbeddedViewRef<CdkVirtualForOfContext<T>>;
       view.context.index = this._renderedRange.start + i;
       view.context.count = count;
+      this._updateComputedContextProperties(view.context);
+    }
+  }
+
+  private updateVariableContext(viewContainerRef: ViewContainerRef) {
+    // Update the context variables on all items.
+    let i = viewContainerRef.length;
+    while (i--) {
+      const view = viewContainerRef.get(i) as EmbeddedViewRef<CdkVirtualForOfContext<T>>;
+      view.context.index = this._renderedRange.start + i;
+      view.context.count = this._data.length;
       this._updateComputedContextProperties(view.context);
     }
   }
@@ -361,6 +395,7 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
     context.odd = !context.even;
   }
 
+  // @Internal
   /** Creates a new embedded view and moves it to the given index */
   private _createEmbeddedViewAt(index: number): EmbeddedViewRef<CdkVirtualForOfContext<T>> {
     // Note that it's important that we insert the item directly at the proper index,

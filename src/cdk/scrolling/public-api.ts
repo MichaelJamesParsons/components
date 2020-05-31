@@ -14,3 +14,4 @@ export * from './viewport-ruler';
 export * from './virtual-for-of';
 export * from './virtual-scroll-strategy';
 export * from './virtual-scroll-viewport';
+export * from './list_renderer';

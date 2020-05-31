@@ -68,6 +68,7 @@ import {
   getTableUnknownDataSourceError
 } from './table-errors';
 import {CDK_TABLE} from './tokens';
+import {LatencyAuditor} from '@angular/cdk/scrolling/_perf_util_DO_NOT_SUBMIT';
 
 /** Interface used to provide an outlet for rows to be inserted into. */
 export interface RowOutlet {
@@ -309,6 +310,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   /** Whether the no data row is currently showing anything. */
   private _isShowingNoDataRow = false;
 
+  // @Internal
   /**
    * Tracking function that will be used to check the differences in data changes. Used similarly
    * to `ngFor` `trackBy` function. Optimize row operations by identifying a row based on its data
@@ -452,6 +454,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
   }
 
+  // @Internal
   ngAfterContentChecked() {
     // Cache the row and column definitions gathered by ContentChildren and programmatic injection.
     this._cacheRowDefs();
@@ -486,6 +489,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     this._checkStickyStates();
   }
 
+  // @Internal
   ngOnDestroy() {
     this._rowOutlet.viewContainer.clear();
     this._noDataRowOutlet.viewContainer.clear();
@@ -520,7 +524,6 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     }
 
     const viewContainer = this._rowOutlet.viewContainer;
-
     changes.forEachOperation(
         (record: IterableChangeRecord<RenderRow<T>>, prevIndex: number|null,
          currentIndex: number|null) => {
@@ -756,6 +759,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     return renderRows;
   }
 
+  // @Internal
   /**
    * Gets a list of `RenderRow<T>` for the provided data object and any `CdkRowDef` objects that
    * should be rendered for this data. Reuses the cached RenderRow objects if they match the same
@@ -777,6 +781,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
   }
 
+  // @Internal
   /** Update the map containing the content's column definitions. */
   private _cacheColumnDefs() {
     this._columnDefsByName.clear();
@@ -791,6 +796,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
   }
 
+  // @Internal
   /** Update the list of all available row definitions that can be used. */
   private _cacheRowDefs() {
     this._headerRowDefs = mergeArrayAndSet(
@@ -808,6 +814,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     this._defaultRowDef = defaultRowDefs[0];
   }
 
+  // @Internal
   /**
    * Check if the header, data, or footer rows have changed what columns they want to display or
    * whether the sticky states have changed for the header or footer. If there is a diff, then
@@ -886,6 +893,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
   }
 
+  // @Internal
   /**
    * Clears any existing content in the header row outlet and creates a new embedded view
    * in the outlet using the header row definition.
@@ -900,6 +908,8 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     this.updateStickyHeaderRowStyles();
     this.updateStickyColumnStyles();
   }
+
+  // @Internal
   /**
    * Clears any existing content in the footer row outlet and creates a new embedded view
    * in the outlet using the footer row definition.
@@ -915,6 +925,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     this.updateStickyColumnStyles();
   }
 
+  // @Internal
   /** Adds the sticky column styles for the rows according to the columns' stick states. */
   private _addStickyColumnStyles(rows: HTMLElement[], rowDef: BaseRowDef) {
     const columnDefs = Array.from(rowDef.columns || []).map(columnName => {
@@ -929,6 +940,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     this._stickyStyler.updateStickyColumns(rows, stickyStartStates, stickyEndStates);
   }
 
+  // @Internal
   /** Gets the list of rows that have been rendered in the row outlet. */
   _getRenderedRows(rowOutlet: RowOutlet): HTMLElement[] {
     const renderedRows: HTMLElement[] = [];
@@ -941,6 +953,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     return renderedRows;
   }
 
+  // @Internal
   /**
    * Get the matching row definitions that should be used for this row data. If there is only
    * one row definition, it is returned. Otherwise, find the row definitions that has a when
@@ -976,6 +989,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    */
   private _insertRow(renderRow: RenderRow<T>, renderIndex: number) {
     const rowDef = renderRow.rowDef;
+    // FIXME Update context, similar to CdkVirtualForOfContext.
     const context: RowContext<T> = {$implicit: renderRow.data};
     this._renderRow(this._rowOutlet, rowDef, renderIndex, context);
   }
@@ -1023,6 +1037,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     }
   }
 
+  // @Internal
   /** Gets the column definitions for the provided row def. */
   private _getCellTemplates(rowDef: BaseRowDef): TemplateRef<any>[] {
     if (!rowDef || !rowDef.columns) {
@@ -1039,6 +1054,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
   }
 
+  // @Internal
   /** Adds native table sections (e.g. tbody) and moves the row outlets into them. */
   private _applyNativeTableSections() {
     const documentFragment = this._document.createDocumentFragment();
@@ -1063,6 +1079,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     this._elementRef.nativeElement.appendChild(documentFragment);
   }
 
+  // @Internal
   /**
    * Forces a re-render of the data rows. Should be called in cases where there has been an input
    * change that affects the evaluation of which rows should be rendered, e.g. toggling
@@ -1075,6 +1092,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     this.updateStickyColumnStyles();
   }
 
+  // @Internal
   /**
    * Checks if there has been a change in sticky states since last check and applies the correct
    * sticky styles. Since checking resets the "dirty" state, this should only be performed once
@@ -1102,6 +1120,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     }
   }
 
+  // @Internal
   /**
    * Creates the sticky styler that will be used for sticky rows and columns. Listens
    * for directionality changes and provides the latest direction to the styler. Re-applies column
@@ -1119,11 +1138,13 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
         });
   }
 
+  // @Internal
   /** Filters definitions that belong to this table from a QueryList. */
   private _getOwnDefs<I extends {_table?: any}>(items: QueryList<I>): I[] {
     return items.filter(item => !item._table || item._table === this);
   }
 
+  // @Internal
   /** Creates or removes the no data row, depending on whether any data is being shown. */
   private _updateNoDataRow() {
     if (this._noDataRow) {

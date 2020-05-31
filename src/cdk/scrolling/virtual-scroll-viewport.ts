@@ -290,7 +290,7 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
       audit.recordAndReset('rrs');
       this._markChangeDetectionNeeded(() => this._scrollStrategy.onContentRendered());
     }
-    audit.stop();
+    // audit.stop();
   }
 
   /**

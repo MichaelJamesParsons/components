@@ -19,6 +19,8 @@ import {
 import {CanStick, CanStickCtor, mixinHasStickyInput} from './can-stick';
 import {CDK_TABLE} from './tokens';
 
+const myWindow = (window as any);
+myWindow.tt = 0;
 
 /** Base interface for a cell definition. Captures a column's cell template definition. */
 export interface CellDef {
@@ -126,7 +128,9 @@ export class CdkColumnDef extends _CdkColumnDefBase implements CanStick {
 /** Base class for the cells. Adds a CSS classname that identifies the column it renders in. */
 export class BaseCdkCell {
   constructor(columnDef: CdkColumnDef, elementRef: ElementRef) {
+    let t = performance.now();
     const columnClassName = `cdk-column-${columnDef.cssClassFriendlyName}`;
+    myWindow.tt += (performance.now() - t);
     elementRef.nativeElement.classList.add(columnClassName);
   }
 }

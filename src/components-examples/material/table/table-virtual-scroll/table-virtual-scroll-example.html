@@ -45,10 +45,10 @@
     </ng-container>
     <!-- /extra headers -->
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns;"></tr>
+    <!--<tr mat-header-row *matHeaderRowDef="displayedColumns;"></tr>
     <tr mat-header-row *matHeaderRowDef="['no-header', 'name-header', 'weight-header', 'symbol-header'];"
         class="example-second-header-row">
-    </tr>
+    </tr>-->
 
     <!-- body -->
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
@@ -59,8 +59,8 @@
         Please note that the cost of items displayed are completely and totally made up.
       </td>
     </ng-container>
-    <tr mat-footer-row *matFooterRowDef="displayedColumns" class="example-first-footer-row"></tr>
-    <tr mat-footer-row *matFooterRowDef="['disclaimer']" class="example-second-footer-row"></tr>
+<!--    <tr mat-footer-row *matFooterRowDef="displayedColumns" class="example-first-footer-row"></tr>-->
+<!--    <tr mat-footer-row *matFooterRowDef="['disclaimer']" class="example-second-footer-row"></tr>-->
   </table>
 </cdk-virtual-scroll-viewport>
 
@@ -128,7 +128,7 @@
         Please note that the cost of items displayed are completely and totally made up.
       </mat-footer-cell>
     </ng-container>
-    <mat-footer-row *matFooterRowDef="displayedColumns" class="example-first-footer-row"></mat-footer-row>
-    <mat-footer-row *matFooterRowDef="['disclaimer']" class="example-second-footer-row"></mat-footer-row>
+    <!--<mat-footer-row *matFooterRowDef="displayedColumns" class="example-first-footer-row"></mat-footer-row>
+    <mat-footer-row *matFooterRowDef="['disclaimer']" class="example-second-footer-row"></mat-footer-row>-->
   </mat-virtual-table>
 </cdk-virtual-scroll-viewport>

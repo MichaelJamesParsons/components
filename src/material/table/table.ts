@@ -128,14 +128,14 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
     super(_differs, _changeDetectorRef, _elementRef, role, _dir, _document, _platform);
 
     let offsetFromTop = -1;
-    this._viewport.tableScrollHandler = () => {
+    /*this._viewport.tableScrollHandler = () => {
       const nextOffset = this._viewport.getOffsetToRenderedContentStart() || 0;
       if (nextOffset !== offsetFromTop) {
         // TODO only call when sticky headers are enabled
         this.renderStickyRows(nextOffset);
         offsetFromTop = nextOffset;
       }
-    };
+    };*/
 
     // FIXME unsubscribe
     /**
@@ -183,12 +183,18 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
     if (headers.length !== this.headerRowOffsetCache.length) {
       this.headerRowCellsCache = headers.map(header =>
           header.getElementsByClassName(this.stickyCssClass) as unknown as HTMLElement[]);
+      // TODO translateY
+      // TODO willChange - Enable when scroll starts outside of zone.
+      //  Disable when scroll stops.
       this.headerRowOffsetCache = this.headerRowCellsCache.map(headerCells =>
           parseInt((headerCells[0] as HTMLElement).style.top, 10));
     }
 
     for (const [index, headerCells] of this.headerRowCellsCache.entries()) {
       for (const cell of headerCells) {
+        // TODO translateY
+        // TODO willChange - Enable when scroll starts outside of zone.
+        //  Disable when scroll stops.
         const offset = offsetFromTop - this.headerRowOffsetCache[index];
         cell.style.top = `-${offset}px`;
       }
