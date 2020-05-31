@@ -69,6 +69,7 @@ import {
 } from './table-errors';
 import {CDK_TABLE} from './tokens';
 import {LatencyAuditor} from '@angular/cdk/scrolling/_perf_util_DO_NOT_SUBMIT';
+import {CdkVirtualForOfContext, RecycleRendererStrategy} from '@angular/cdk/scrolling';
 
 /** Interface used to provide an outlet for rows to be inserted into. */
 export interface RowOutlet {
@@ -425,6 +426,10 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   /** Row definition that will only be rendered if there's no data in the table. */
   @ContentChild(CdkNoDataRow) _noDataRow: CdkNoDataRow;
 
+
+  private readonly iterableRendererStrategy = new RecycleRendererStrategy<RenderRow<T>, T, RowContext<T>>();
+
+
   constructor(
       protected readonly _differs: IterableDiffers,
       protected readonly _changeDetectorRef: ChangeDetectorRef,
@@ -523,8 +528,18 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
       return;
     }
 
-    const viewContainer = this._rowOutlet.viewContainer;
-    changes.forEachOperation(
+    this.iterableRendererStrategy.applyChanges(
+        changes,
+        this._rowOutlet.viewContainer,
+        (record: IterableChangeRecord<RenderRow<T>>,
+         adjustedPreviousIndex: number | null,
+         currentIndex: number | null) => {
+          return this._insertRowAndReturn(record.item!, currentIndex!);
+        },
+        (record: IterableChangeRecord<RenderRow<T>>) => record.item.data,
+    );
+
+    /*changes.forEachOperation(
         (record: IterableChangeRecord<RenderRow<T>>, prevIndex: number|null,
          currentIndex: number|null) => {
           if (record.previousIndex == null) {
@@ -545,7 +560,10 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     changes.forEachIdentityChange((record: IterableChangeRecord<RenderRow<T>>) => {
       const rowView = <RowViewRef<T>>viewContainer.get(record.currentIndex!);
       rowView.context.$implicit = record.item.data;
-    });
+    });*/
+
+    // Update the meta context of a row's context data (index, count, first, last, ...)
+    this._updateRowIndexContext();
 
     this._updateNoDataRow();
     this.updateStickyColumnStyles();
@@ -987,11 +1005,28 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    * Create the embedded view for the data row template and place it in the correct index location
    * within the data row view container.
    */
-  private _insertRow(renderRow: RenderRow<T>, renderIndex: number) {
+  /*private _insertRow(renderRow: RenderRow<T>, renderIndex: number) {
     const rowDef = renderRow.rowDef;
     // FIXME Update context, similar to CdkVirtualForOfContext.
     const context: RowContext<T> = {$implicit: renderRow.data};
     this._renderRow(this._rowOutlet, rowDef, renderIndex, context);
+  }*/
+
+  private _insertRowAndReturn(renderRow: RenderRow<T>, renderIndex: number): EmbeddedViewRef<RowContext<T>> {
+    const rowDef = renderRow.rowDef;
+    // FIXME Update context, similar to CdkVirtualForOfContext.
+    const context: RowContext<T> = {$implicit: renderRow.data};
+
+    // TODO(andrewseguin): enforce that one outlet was instantiated from createEmbeddedView
+    const el = this._rowOutlet.viewContainer.createEmbeddedView(rowDef.template, context, renderIndex);
+
+    for (let cellTemplate of this._getCellTemplates(rowDef)) {
+      if (CdkCellOutlet.mostRecentCellOutlet) {
+        CdkCellOutlet.mostRecentCellOutlet._viewContainer.createEmbeddedView(cellTemplate, context);
+      }
+    }
+
+    return el;
   }
 
   /**

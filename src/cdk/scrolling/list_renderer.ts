@@ -1,30 +1,34 @@
 import {EmbeddedViewRef, IterableChangeRecord, IterableChanges, IterableDiffer, ViewContainerRef} from '@angular/core';
 
 export interface IterableRendererViewRefContext<T> {
-  $implicit: T;
+  $implicit?: T;
 }
 
-export interface IterableRendererStrategy<T, ViewRefContext extends IterableRendererViewRefContext<T>> {
+export interface IterableRendererStrategy<ViewRefChange, T, ViewRefContext extends IterableRendererViewRefContext<T>> {
   applyChanges(
-      changes: IterableChanges<T>,
+      changes: IterableChanges<ViewRefChange>,
       viewContainer: ViewContainerRef,
-      itemFactory: IterableRendererItemFactory<T, ViewRefContext>,
-      onContextChanged: IterableRendererContextChangedHandler,
+      itemFactory: IterableRendererItemFactory<ViewRefChange, T, ViewRefContext>,
+      onContextChanged: IterableRendererImplicitValueResolver<ViewRefChange>,
   ): void;
 }
 
-type IterableRendererItemFactory<T, ViewRefContext extends IterableRendererViewRefContext<T>> =
-    (index: number, viewContainerRef: ViewContainerRef) => EmbeddedViewRef<ViewRefContext>;
-type IterableRendererContextChangedHandler = (viewContainerRef: ViewContainerRef) => void;
+type IterableRendererItemFactory<ViewRefChange, T, ViewRefContext extends IterableRendererViewRefContext<T>> =
+    (record: IterableChangeRecord<ViewRefChange>,
+        adjustedPreviousIndex: number | null,
+        currentIndex: number | null,
+        viewContainerRef: ViewContainerRef) => EmbeddedViewRef<ViewRefContext>;
 
-export class RecycleRendererStrategy<T, ViewRefContext extends IterableRendererViewRefContext<T>> implements IterableRendererStrategy<T, ViewRefContext>{
+type IterableRendererImplicitValueResolver<ViewRefChange> = (record: IterableChangeRecord<ViewRefChange>) => any;
+
+export class RecycleRendererStrategy<ViewRefChange, T, ViewRefContext extends IterableRendererViewRefContext<T>> implements IterableRendererStrategy<ViewRefChange, T, ViewRefContext>{
   differ: IterableDiffer<ViewRefContext>;
 
   /**
    * The size of the cache used to store templates that are not being used for re-use later.
    * Setting the cache size to `0` will disable caching. Defaults to 20 templates.
    */
-  templateCacheSize: number = 20;
+  templateCacheSize: number = 50;
 
   /**
    * The template cache used to hold on ot template instancess that have been stamped out, but don't
@@ -34,17 +38,23 @@ export class RecycleRendererStrategy<T, ViewRefContext extends IterableRendererV
   private _templateCache: EmbeddedViewRef<ViewRefContext>[] = [];
 
   /** Apply changes to the DOM. */
-  applyChanges(changes: IterableChanges<T>,
+  applyChanges(changes: IterableChanges<ViewRefChange>,
                viewContainerRef: ViewContainerRef,
-               itemFactory: IterableRendererItemFactory<T, ViewRefContext>,
-               onContextChanged: IterableRendererContextChangedHandler) {
+               itemFactory: IterableRendererItemFactory<ViewRefChange, T, ViewRefContext>,
+               identityFactory: IterableRendererImplicitValueResolver<ViewRefChange>) {
     // Rearrange the views to put them in the right location.
-    changes.forEachOperation((record: IterableChangeRecord<T>,
+    changes.forEachOperation((record: IterableChangeRecord<ViewRefChange>,
                               adjustedPreviousIndex: number | null,
                               currentIndex: number | null) => {
       if (record.previousIndex == null) {  // Item added.
-        const view = this._insertViewForNewItem(currentIndex!, viewContainerRef, itemFactory);
-        view.context.$implicit = record.item;
+        const view = this._insertViewForNewItem(
+            record,
+            adjustedPreviousIndex,
+            currentIndex,
+            viewContainerRef,
+            itemFactory,
+        );
+        view.context.$implicit = identityFactory(record);
       } else if (currentIndex == null) {  // Item removed.
         const detachedView = this._detachView(
             adjustedPreviousIndex!, viewContainerRef);
@@ -53,20 +63,18 @@ export class RecycleRendererStrategy<T, ViewRefContext extends IterableRendererV
         const view = viewContainerRef.get(adjustedPreviousIndex!) as
             EmbeddedViewRef<ViewRefContext>;
         viewContainerRef.move(view, currentIndex);
-        view.context.$implicit = record.item;
+        view.context.$implicit = identityFactory(record);
       }
     });
 
     // Update $implicit for any items that had an identity change.
-    changes.forEachIdentityChange((record: IterableChangeRecord<T>) => {
+    changes.forEachIdentityChange((record: IterableChangeRecord<ViewRefChange>) => {
       const view = viewContainerRef.get(record.currentIndex!) as
           EmbeddedViewRef<ViewRefContext>;
-      view.context.$implicit = record.item;
+      view.context.$implicit = identityFactory(record);
     });
 
     // Update the context variables on all items.
-    onContextChanged(viewContainerRef);
-
    /* const count = this._data.length;
     let i = viewContainerRef.length;
     while (i--) {
@@ -96,8 +104,14 @@ export class RecycleRendererStrategy<T, ViewRefContext extends IterableRendererV
   }
 
   /** Inserts a view for a new item, either from the cache or by creating a new one. */
-  private _insertViewForNewItem(index: number, viewContainerRef: ViewContainerRef, itemFactory: IterableRendererItemFactory<T, ViewRefContext>): EmbeddedViewRef<ViewRefContext> {
-    return this._insertViewFromCache(index, viewContainerRef) || itemFactory(index, viewContainerRef);
+  private _insertViewForNewItem(
+      record: IterableChangeRecord<ViewRefChange>,
+      adjustedPreviousIndex: number | null,
+      currentIndex: number | null,
+      viewContainerRef: ViewContainerRef,
+      itemFactory: IterableRendererItemFactory<ViewRefChange, T, ViewRefContext>): EmbeddedViewRef<ViewRefContext> {
+    return this._insertViewFromCache(currentIndex!, viewContainerRef)
+        || itemFactory(record, adjustedPreviousIndex, currentIndex, viewContainerRef);
   }
 
   /** Inserts a recycled view from the cache at the given index. */

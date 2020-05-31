@@ -174,7 +174,7 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
 
   private _destroyed = new Subject<void>();
 
-  private readonly iterableRendererStrategy = new RecycleRendererStrategy<T, CdkVirtualForOfContext<T>>();
+  private readonly iterableRendererStrategy = new RecycleRendererStrategy<T, T, CdkVirtualForOfContext<T>>();
 
   constructor(
       /** The view container to add items to. */
@@ -243,9 +243,13 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
         this.iterableRendererStrategy.applyChanges(
             changes,
             this._viewContainerRef,
-            (index, viewContainerRef) => this._createEmbeddedViewAt(index),
-            (viewContainerRef) => this.updateVariableContext(viewContainerRef)
+            (record: IterableChangeRecord<T>,
+             adjustedPreviousIndex: number | null,
+             currentIndex: number | null,
+             viewContainerRef: ViewContainerRef) => this._createEmbeddedViewAt(currentIndex!),
+            (record) => record.item,
         );
+        this.updateVariableContext();
         // this._applyChanges(changes);
       }
       this._needsUpdate = false;
@@ -353,11 +357,11 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
     }
   }
 
-  private updateVariableContext(viewContainerRef: ViewContainerRef) {
+  private updateVariableContext() {
     // Update the context variables on all items.
-    let i = viewContainerRef.length;
+    let i = this._viewContainerRef.length;
     while (i--) {
-      const view = viewContainerRef.get(i) as EmbeddedViewRef<CdkVirtualForOfContext<T>>;
+      const view = this._viewContainerRef.get(i) as EmbeddedViewRef<CdkVirtualForOfContext<T>>;
       view.context.index = this._renderedRange.start + i;
       view.context.count = this._data.length;
       this._updateComputedContextProperties(view.context);
