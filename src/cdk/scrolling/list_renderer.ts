@@ -26,7 +26,7 @@ export class RecycleRendererStrategy<ViewRefChange, T, ViewRefContext extends It
 
   /**
    * The size of the cache used to store templates that are not being used for re-use later.
-   * Setting the cache size to `0` will disable caching. Defaults to 20 templates.
+   * Setting the cache size to `0` will disable caching. Defaults to 50 templates.
    */
   templateCacheSize: number = 50;
 
@@ -73,16 +73,12 @@ export class RecycleRendererStrategy<ViewRefChange, T, ViewRefContext extends It
           EmbeddedViewRef<ViewRefContext>;
       view.context.$implicit = identityFactory(record);
     });
+  }
 
-    // Update the context variables on all items.
-   /* const count = this._data.length;
-    let i = viewContainerRef.length;
-    while (i--) {
-      const view = viewContainerRef.get(i) as EmbeddedViewRef<ViewRefContext>;
-      view.context.index = this._renderedRange.start + i;
-      view.context.count = count;
-      this._updateComputedContextProperties(view.context);
-    }*/
+  detach() {
+    for (let view of this._templateCache) {
+      view.destroy();
+    }
   }
 
   /** Cache the given detached view. */

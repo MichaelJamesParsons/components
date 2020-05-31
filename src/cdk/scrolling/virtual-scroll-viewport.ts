@@ -157,7 +157,7 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
    * FIXME This is a hack to listen for scroll changes synchronously. Find a
    *  better solution.
    */
-  tableScrollHandler = () => {};
+  tableScrollHandler = (offset: number) => {};
 
   constructor(public elementRef: ElementRef<HTMLElement>,
               private _changeDetectorRef: ChangeDetectorRef,
@@ -290,7 +290,7 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
       audit.recordAndReset('rrs');
       this._markChangeDetectionNeeded(() => this._scrollStrategy.onContentRendered());
     }
-    audit.stop();
+    // audit.stop();
   }
 
   /**
@@ -315,7 +315,7 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
     this._renderedContentOffset = offset;
 
     // FIXME This is a hack. See JSDoc for context.
-    this.tableScrollHandler();
+    this.tableScrollHandler(this._renderedContentOffset);
 
     if (to === 'to-end') {
       transform += ` translate${axis}(-100%)`;

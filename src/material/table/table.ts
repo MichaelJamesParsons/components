@@ -9,7 +9,7 @@
 import {CDK_TABLE_TEMPLATE, CdkTable, CDK_TABLE, DataSource, CdkTableDataSourceInput, RowOutlet} from '@angular/cdk/table';
 import {Attribute, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EmbeddedViewRef, Inject, Input, IterableDiffers, NgZone, OnDestroy, Optional, SimpleChanges, SkipSelf, ViewEncapsulation} from '@angular/core';
 import {CdkVirtualDataSource, CdkVirtualForOfContext, CdkVirtualScrollViewport} from '../../cdk/scrolling';
-import {BehaviorSubject, combineLatest, isObservable, Observable, Subject} from 'rxjs';
+import {isObservable, Observable, Subject} from 'rxjs';
 import {ArrayDataSource, isDataSource, ListRange} from '@angular/cdk/collections';
 import {pairwise, shareReplay, startWith, switchMap, map} from 'rxjs/operators';
 import {Directionality} from '@angular/cdk/bidi';
@@ -128,14 +128,48 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
     super(_differs, _changeDetectorRef, _elementRef, role, _dir, _document, _platform);
 
     let offsetFromTop = -1;
-    /*this._viewport.tableScrollHandler = () => {
+
+    /*this._viewport.elementRef.nativeElement.addEventListener('scroll', (event) => {
+      const scrollTop = (event.target as HTMLElement).scrollTop;
+      const renderedContentStart = this._viewport.getOffsetToRenderedContentStart() || 0;
+      const fromTop = Math.round(renderedContentStart - (scrollTop - 1072));
+      let nextOffset = renderedContentStart;
+
+      if (renderedContentStart > 1072) {
+        nextOffset = fromTop;
+      }
+
+      console.log('scrolling', nextOffset, fromTop, renderedContentStart);
+      this.renderStickyRows(nextOffset);
+    });*/
+
+    this._viewport.tableScrollHandler = offset => {
+      // const nextOffset = this._viewport.getOffsetToRenderedContentStart() || 0;
+      /*const renderedContentStart = this._viewport.getOffsetToRenderedContentStart() || 0;
+      console.log(this._viewport.elementRef.nativeElement.scrollTop);*/
+      // const fromTop = Math.round(renderedContentStart - (scrollTop - 1072));
+      /*
+      let nextOffset = renderedContentStart;
+
+      if (renderedContentStart > 1072) {
+        nextOffset = fromTop;
+      }
+
+      console.log(nextOffset);
+      */
+
       const nextOffset = this._viewport.getOffsetToRenderedContentStart() || 0;
       if (nextOffset !== offsetFromTop) {
         // TODO only call when sticky headers are enabled
-        this.renderStickyRows(nextOffset);
+        this.renderStickyRows(offset);
         offsetFromTop = nextOffset;
       }
-    };*/
+    };
+
+    /*this._viewport.elementScrolled().subscribe((event) => {
+      console.log((event.target as HTMLElement).scrollTop);
+      this.renderStickyRows(Math.round((event.target as HTMLElement).scrollTop));
+    })*/
 
     // FIXME unsubscribe
     /**
@@ -196,7 +230,9 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
         // TODO willChange - Enable when scroll starts outside of zone.
         //  Disable when scroll stops.
         const offset = offsetFromTop - this.headerRowOffsetCache[index];
+        cell.style.willChange = 'top';
         cell.style.top = `-${offset}px`;
+        // this.applyStickyStyles(offsetFromTop, cell);
       }
     }
   }
@@ -216,8 +252,15 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
 
     for (const [index, header] of headers.entries()) {
       const offset = offsetFromTop - this.headerRowOffsetCache[index];
+      header.style.willChange = 'top';
       header.style.top = `-${offset}px`;
+      // this.applyStickyStyles(offsetFromTop, header);
     }
+  }
+
+  private applyStickyStyles(offsetFromTop: number, header: HTMLElement) {
+    header.style.willChange = 'transform';
+    header.style.transform = `translateY(-${offsetFromTop}px)`;
   }
 
   // FIXME verify calculations are correct with footer rows

@@ -1,3 +1,35 @@
+.example-container {
+  height: 600px;
+  width: 900px;
+  overflow: auto;
+}
+
 table {
-  width: 100%;
+  width: 1200px;
+}
+
+td.mat-column-star {
+  width: 20px;
+  padding-right: 8px;
+}
+
+th.mat-column-position, td.mat-column-position {
+  padding-left: 8px;
+}
+
+.mat-table-sticky[mat-cell] {
+  background: #f0f0f0;
+}
+
+.mat-table-sticky[mat-header-cell] {
+  background: #69f0ae;
+}
+
+
+mat-cell.mat-table-sticky {
+  background: #f0f0f0;
+}
+
+.mat-table-sticky:last-child {
+  border-left: 1px solid #e0e0e0;
 }

@@ -162,13 +162,6 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
   /** The currently rendered range of indices. */
   private _renderedRange: ListRange;
 
-  /**
-   * The template cache used to hold on ot template instancess that have been stamped out, but don't
-   * currently need to be rendered. These instances will be reused in the future rather than
-   * stamping out brand new ones.
-   */
-  private _templateCache: EmbeddedViewRef<CdkVirtualForOfContext<T>>[] = [];
-
   /** Whether the rendered data should be updated during the next ngDoCheck cycle. */
   private _needsUpdate = false;
 
@@ -249,8 +242,8 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
              viewContainerRef: ViewContainerRef) => this._createEmbeddedViewAt(currentIndex!),
             (record) => record.item,
         );
-        this.updateVariableContext();
         // this._applyChanges(changes);
+        this.updateVariableContext();
       }
       this._needsUpdate = false;
     }
@@ -265,20 +258,7 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
 
     this._destroyed.next();
     this._destroyed.complete();
-
-    for (let view of this._templateCache) {
-      view.destroy();
-    }
-    this._dataSourceChanges.next();
-    this._dataSourceChanges.complete();
-    this.viewChange.complete();
-
-    this._destroyed.next();
-    this._destroyed.complete();
-
-    for (let view of this._templateCache) {
-      view.destroy();
-    }
+    this.iterableRendererStrategy.detach();
   }
 
   // @Internal
@@ -320,43 +300,6 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
     }
   }
 
-  /** Apply changes to the DOM. */
-  private _applyChanges(changes: IterableChanges<T>) {
-    // Rearrange the views to put them in the right location.
-    changes.forEachOperation((record: IterableChangeRecord<T>,
-                              adjustedPreviousIndex: number | null,
-                              currentIndex: number | null) => {
-      if (record.previousIndex == null) {  // Item added.
-        const view = this._insertViewForNewItem(currentIndex!);
-        view.context.$implicit = record.item;
-      } else if (currentIndex == null) {  // Item removed.
-        this._cacheView(this._detachView(adjustedPreviousIndex!));
-      } else {  // Item moved.
-        const view = this._viewContainerRef.get(adjustedPreviousIndex!) as
-            EmbeddedViewRef<CdkVirtualForOfContext<T>>;
-        this._viewContainerRef.move(view, currentIndex);
-        view.context.$implicit = record.item;
-      }
-    });
-
-    // Update $implicit for any items that had an identity change.
-    changes.forEachIdentityChange((record: IterableChangeRecord<T>) => {
-      const view = this._viewContainerRef.get(record.currentIndex!) as
-          EmbeddedViewRef<CdkVirtualForOfContext<T>>;
-      view.context.$implicit = record.item;
-    });
-
-    // Update the context variables on all items.
-    const count = this._data.length;
-    let i = this._viewContainerRef.length;
-    while (i--) {
-      const view = this._viewContainerRef.get(i) as EmbeddedViewRef<CdkVirtualForOfContext<T>>;
-      view.context.index = this._renderedRange.start + i;
-      view.context.count = count;
-      this._updateComputedContextProperties(view.context);
-    }
-  }
-
   private updateVariableContext() {
     // Update the context variables on all items.
     let i = this._viewContainerRef.length;
@@ -366,29 +309,6 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
       view.context.count = this._data.length;
       this._updateComputedContextProperties(view.context);
     }
-  }
-
-  /** Cache the given detached view. */
-  private _cacheView(view: EmbeddedViewRef<CdkVirtualForOfContext<T>>) {
-    if (this._templateCache.length < this.cdkVirtualForTemplateCacheSize) {
-      this._templateCache.push(view);
-    } else {
-      const index = this._viewContainerRef.indexOf(view);
-
-      // It's very unlikely that the index will ever be -1, but just in case,
-      // destroy the view on its own, otherwise destroy it through the
-      // container to ensure that all the references are removed.
-      if (index === -1) {
-        view.destroy();
-      } else {
-        this._viewContainerRef.remove(index);
-      }
-    }
-  }
-
-  /** Inserts a view for a new item, either from the cache or by creating a new one. */
-  private _insertViewForNewItem(index: number): EmbeddedViewRef<CdkVirtualForOfContext<T>> {
-    return this._insertViewFromCache(index) || this._createEmbeddedViewAt(index);
   }
 
   /** Update the computed properties on the `CdkVirtualForOfContext`. */
@@ -418,20 +338,5 @@ export class CdkVirtualForOf<T> implements CdkVirtualDataSource<T>, CollectionVi
       odd: false,
       even: false
     }, index);
-  }
-
-  /** Inserts a recycled view from the cache at the given index. */
-  private _insertViewFromCache(index: number): EmbeddedViewRef<CdkVirtualForOfContext<T>>|null {
-    const cachedView = this._templateCache.pop();
-    if (cachedView) {
-      this._viewContainerRef.insert(cachedView, index);
-    }
-    return cachedView || null;
-  }
-
-  /** Detaches the embedded view at the given index. */
-  private _detachView(index: number): EmbeddedViewRef<CdkVirtualForOfContext<T>> {
-    return this._viewContainerRef.detach(index) as
-        EmbeddedViewRef<CdkVirtualForOfContext<T>>;
   }
 }
