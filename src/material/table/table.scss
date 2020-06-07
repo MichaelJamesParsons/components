@@ -9,6 +9,10 @@ mat-table {
   display: block;
 }
 
+table.mat-table.fixed-columns {
+  table-layout: fixed;
+}
+
 mat-header-row {
   min-height: $mat-header-row-height;
 }

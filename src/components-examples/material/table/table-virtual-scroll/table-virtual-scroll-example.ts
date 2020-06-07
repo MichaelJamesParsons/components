@@ -1,4 +1,5 @@
 import {Component} from '@angular/core';
+import {TableVirtualScrollDataSource} from './table-data-source';
 
 export interface PeriodicElement {
   name: string;
@@ -36,7 +37,9 @@ for (let x = 0; x < 100; x++) {
   templateUrl: 'table-virtual-scroll-example.html',
 })
 export class TableVirtualScrollExample {
-  displayedColumns: string[] = ['position', 'name', 'weight', 'symbol'];
+  displayedColumns: string[] = ['position', 'name'];
   dataSource = EXPANDED_ELEMENT_DATA;
   trackBy = (index: number, el: PeriodicElement) => el.position;
+
+  otherDataSource = new TableVirtualScrollDataSource(EXPANDED_ELEMENT_DATA);
 }

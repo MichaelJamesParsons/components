@@ -9,7 +9,7 @@ export interface IterableRendererStrategy<ViewRefChange, T, ViewRefContext exten
       changes: IterableChanges<ViewRefChange>,
       viewContainer: ViewContainerRef,
       itemFactory: IterableRendererItemFactory<ViewRefChange, T, ViewRefContext>,
-      onContextChanged: IterableRendererImplicitValueResolver<ViewRefChange>,
+      identityFactory: IterableRendererImplicitValueResolver<ViewRefChange>,
   ): void;
 }
 
@@ -21,14 +21,23 @@ type IterableRendererItemFactory<ViewRefChange, T, ViewRefContext extends Iterab
 
 type IterableRendererImplicitValueResolver<ViewRefChange> = (record: IterableChangeRecord<ViewRefChange>) => any;
 
+
+interface ChangedListItem<ViewRefChange> {
+  record: IterableChangeRecord<ViewRefChange>;
+  adjustedPreviousIndex: number | null;
+  currentIndex: number | null;
+}
+
+
+
 export class RecycleRendererStrategy<ViewRefChange, T, ViewRefContext extends IterableRendererViewRefContext<T>> implements IterableRendererStrategy<ViewRefChange, T, ViewRefContext>{
   differ: IterableDiffer<ViewRefContext>;
 
   /**
    * The size of the cache used to store templates that are not being used for re-use later.
-   * Setting the cache size to `0` will disable caching. Defaults to 50 templates.
+   * Setting the cache size to `0` will disable caching. Defaults to 20 templates.
    */
-  templateCacheSize: number = 50;
+  templateCacheSize: number = 150;
 
   /**
    * The template cache used to hold on ot template instancess that have been stamped out, but don't
@@ -42,6 +51,45 @@ export class RecycleRendererStrategy<ViewRefChange, T, ViewRefContext extends It
                viewContainerRef: ViewContainerRef,
                itemFactory: IterableRendererItemFactory<ViewRefChange, T, ViewRefContext>,
                identityFactory: IterableRendererImplicitValueResolver<ViewRefChange>) {
+    /*let removed: Array<ChangedListItem<ViewRefChange>> = [];
+    let added: Array<ChangedListItem<ViewRefChange>> = [];
+
+    // Rearrange the views to put them in the right location.
+    changes.forEachOperation((record: IterableChangeRecord<ViewRefChange>,
+                              adjustedPreviousIndex: number | null,
+                              currentIndex: number | null) => {
+      if (record.previousIndex == null) {  // Item added.
+        added.push({record, adjustedPreviousIndex, currentIndex});
+      } else if (currentIndex == null) {  // Item removed.
+        removed.push({record, adjustedPreviousIndex, currentIndex});
+      } else {  // Item moved.
+        const view = viewContainerRef.get(adjustedPreviousIndex!) as
+            EmbeddedViewRef<ViewRefContext>;
+        viewContainerRef.move(view, currentIndex);
+        view.context.$implicit = identityFactory(record);
+      }
+    });
+
+    removed.forEach(({adjustedPreviousIndex}) => {
+      const detachedView = this._detachView(
+          adjustedPreviousIndex!, viewContainerRef);
+      this._cacheView(detachedView, viewContainerRef);
+    });
+
+    added.forEach(({record, adjustedPreviousIndex, currentIndex}) => {
+      const view = this._insertViewForNewItem(
+          record,
+          adjustedPreviousIndex,
+          currentIndex,
+          viewContainerRef,
+          itemFactory,
+      );
+      view.context.$implicit = identityFactory(record);
+    });
+
+    added = [];
+    removed = [];*/
+
     // Rearrange the views to put them in the right location.
     changes.forEachOperation((record: IterableChangeRecord<ViewRefChange>,
                               adjustedPreviousIndex: number | null,
@@ -68,11 +116,11 @@ export class RecycleRendererStrategy<ViewRefChange, T, ViewRefContext extends It
     });
 
     // Update $implicit for any items that had an identity change.
-    changes.forEachIdentityChange((record: IterableChangeRecord<ViewRefChange>) => {
+    /*changes.forEachIdentityChange((record: IterableChangeRecord<ViewRefChange>) => {
       const view = viewContainerRef.get(record.currentIndex!) as
           EmbeddedViewRef<ViewRefContext>;
       view.context.$implicit = identityFactory(record);
-    });
+    });*/
   }
 
   detach() {
@@ -106,8 +154,14 @@ export class RecycleRendererStrategy<ViewRefChange, T, ViewRefContext extends It
       currentIndex: number | null,
       viewContainerRef: ViewContainerRef,
       itemFactory: IterableRendererItemFactory<ViewRefChange, T, ViewRefContext>): EmbeddedViewRef<ViewRefContext> {
-    return this._insertViewFromCache(currentIndex!, viewContainerRef)
-        || itemFactory(record, adjustedPreviousIndex, currentIndex, viewContainerRef);
+
+    const res = this._insertViewFromCache(currentIndex!, viewContainerRef);
+    if (res) {
+      return res;
+    }
+
+    console.log('creating new item', this._templateCache.length);
+    return itemFactory(record, adjustedPreviousIndex, currentIndex, viewContainerRef);
   }
 
   /** Inserts a recycled view from the cache at the given index. */

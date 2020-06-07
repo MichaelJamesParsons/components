@@ -111,16 +111,39 @@ export class FixedSizeVirtualScrollStrategy implements VirtualScrollStrategy {
       return;
     }
 
-    this._viewport.setTotalContentSize(this._viewport.getDataLength() * this._itemSize);
+    this._viewport.setTotalContentSize(this._viewport.getDataLength() * this._itemSize + 56);
   }
 
-  /** Update the viewport's rendered range. */
-  private _updateRenderedRange() {
+
+  stickyChange = new Subject<number>();
+
+
+
+  private _calculateRenderedContent2(scrollOffset: number): {start: number, end: number, offset: number, index: number}|null {
     if (!this._viewport) {
-      return;
+      return null;
+    }
+    const amount = Math.ceil(this._viewport.getViewportSize() / this._itemSize);
+    const offset = Math.max(scrollOffset - 56, 0); // FIXME hard-coded header height
+    const buffer = Math.ceil(amount * 2); // FIXME hardcoded buffer multiplier 2
+
+    const skip = Math.round(offset / this._itemSize);
+    const index = Math.max(0, skip);
+    const start = Math.max(0, index - buffer);
+    const end = Math.min(this._viewport.getDataLength(), index + amount + buffer);
+    const renderedOffset = start * this._itemSize;
+    /*this._viewport.setRenderedRange({start, end});
+    this._viewport.setRenderedContentOffset(renderedOffset);
+    this._scrolledIndexChange.next(index);*/
+    this.stickyChange.next(renderedOffset);
+    return {start, end, offset: renderedOffset, index};
+  }
+
+  private _calculateRenderedContent(scrollOffset: number): {start: number, end: number, offset: number, index: number}|null {
+    if (!this._viewport) {
+      return null;
     }
 
-    const scrollOffset = this._viewport.measureScrollOffset();
     const firstVisibleIndex = scrollOffset / this._itemSize;
     const renderedRange = this._viewport.getRenderedRange();
     const newRange = {start: renderedRange.start, end: renderedRange.end};
@@ -145,9 +168,30 @@ export class FixedSizeVirtualScrollStrategy implements VirtualScrollStrategy {
       }
     }
 
-    this._viewport.setRenderedRange(newRange);
+    /*this._viewport.setRenderedRange(newRange);
     this._viewport.setRenderedContentOffset(this._itemSize * newRange.start);
-    this._scrolledIndexChange.next(Math.floor(firstVisibleIndex));
+    this._scrolledIndexChange.next(Math.floor(firstVisibleIndex));*/
+    this.stickyChange.next(this._itemSize * newRange.start);
+    return {
+      ...newRange,
+      offset: this._itemSize * newRange.start + 56,
+      index: Math.round(firstVisibleIndex),
+    };
+  }
+
+  /** Update the viewport's rendered range. */
+  private _updateRenderedRange() {
+    if (!this._viewport) {
+      return;
+    }
+
+    const scrollOffset = this._viewport.measureScrollOffset();
+    const original = this._calculateRenderedContent(scrollOffset)!;
+    // const refactored = this._calculateRenderedContent2(scrollOffset)!;
+    const {start, end, offset, index} = original;
+    this._viewport.setRenderedRange({start, end});
+    this._viewport.setRenderedContentOffset(offset);
+    this._scrolledIndexChange.next(Math.floor(index));
   }
 }
 

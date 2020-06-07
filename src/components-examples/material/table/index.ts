@@ -43,6 +43,7 @@ import {TableTextColumnExample} from './table-text-column/table-text-column-exam
 import {TableWrappedExample, WrapperTable} from './table-wrapped/table-wrapped-example';
 import {TableReorderableExample} from './table-reorderable/table-reorderable-example';
 import {TableVirtualScrollExample} from "./table-virtual-scroll/table-virtual-scroll-example";
+import {TableItemSizeDirective} from './table-virtual-scroll/table-item-size.directive';
 
 export {
   TableBasicExample,          TableBasicFlexExample,
@@ -92,8 +93,8 @@ const EXAMPLES = [
     ScrollingModule,
     ExperimentalScrollingModule,
   ],
-  declarations: EXAMPLES,
-  exports: EXAMPLES,
+  declarations: [EXAMPLES, TableItemSizeDirective],
+  exports: [EXAMPLES],
   entryComponents: EXAMPLES,
 })
 export class TableExamplesModule {

@@ -6,12 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {CDK_TABLE_TEMPLATE, CdkTable, CDK_TABLE, DataSource, CdkTableDataSourceInput, RowOutlet} from '@angular/cdk/table';
-import {Attribute, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EmbeddedViewRef, Inject, Input, IterableDiffers, NgZone, OnDestroy, Optional, SimpleChanges, SkipSelf, ViewEncapsulation} from '@angular/core';
-import {CdkVirtualDataSource, CdkVirtualForOfContext, CdkVirtualScrollViewport} from '../../cdk/scrolling';
+import {CDK_TABLE_TEMPLATE, CdkTable, CDK_TABLE, DataSource, CdkTableDataSourceInput, RowOutlet, CdkHeaderRowDef} from '@angular/cdk/table';
+import {Attribute, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EmbeddedViewRef, Inject, Input, IterableDiffers, NgZone, OnDestroy, OnInit, Optional, SkipSelf, ViewEncapsulation} from '@angular/core';
+import {CdkVirtualDataSource, CdkVirtualForOfContext, CdkVirtualScrollViewport, VIRTUAL_SCROLL_STRATEGY, VirtualScrollStrategy} from '../../cdk/scrolling';
 import {isObservable, Observable, Subject} from 'rxjs';
 import {ArrayDataSource, isDataSource, ListRange} from '@angular/cdk/collections';
-import {pairwise, shareReplay, startWith, switchMap, map} from 'rxjs/operators';
+import {pairwise, shareReplay, startWith, switchMap, map, tap, takeWhile, filter} from 'rxjs/operators';
 import {Directionality} from '@angular/cdk/bidi';
 import {DOCUMENT} from '@angular/common';
 import {Platform} from '@angular/cdk/platform';
@@ -62,7 +62,7 @@ export class MatTable<T> extends CdkTable<T> {
   // tslint:disable-next-line:validate-decorators
   changeDetection: ChangeDetectionStrategy.Default,
 })
-export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSource<T>, OnDestroy {
+export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSource<T>, OnInit, OnDestroy {
   /** Overrides the sticky CSS class set by the `CdkTable`. */
   protected stickyCssClass = 'mat-table-sticky';
 
@@ -123,6 +123,7 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
       @Optional() protected readonly _dir: Directionality,
       @Inject(DOCUMENT) _document: any,
       @SkipSelf() private _viewport: CdkVirtualScrollViewport,
+      @Inject(VIRTUAL_SCROLL_STRATEGY) private _scrollStrategy: VirtualScrollStrategy,
       private zone: NgZone,
       _platform: Platform) {
     super(_differs, _changeDetectorRef, _elementRef, role, _dir, _document, _platform);
@@ -143,33 +144,38 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
       this.renderStickyRows(nextOffset);
     });*/
 
-    this._viewport.tableScrollHandler = offset => {
-      // const nextOffset = this._viewport.getOffsetToRenderedContentStart() || 0;
-      /*const renderedContentStart = this._viewport.getOffsetToRenderedContentStart() || 0;
-      console.log(this._viewport.elementRef.nativeElement.scrollTop);*/
-      // const fromTop = Math.round(renderedContentStart - (scrollTop - 1072));
-      /*
-      let nextOffset = renderedContentStart;
+    (this._scrollStrategy as any).stickyChange
+    .pipe(
+        filter(() => this.isStickyEnabled()),
+        tap(() => {
+          if (!this.stickyPositions) {
+            this.initStickyPositions();
+          }
+        }),
+    )
+    .subscribe((stickyOffset: number) => {
+      this.setSticky(stickyOffset);
+    });
 
-      if (renderedContentStart > 1072) {
-        nextOffset = fromTop;
-      }
 
-      console.log(nextOffset);
-      */
 
+
+
+
+
+
+
+
+
+
+    /*this._scrollStrategy.scrolledIndexChange.subscribe(() => {
       const nextOffset = this._viewport.getOffsetToRenderedContentStart() || 0;
       if (nextOffset !== offsetFromTop) {
         // TODO only call when sticky headers are enabled
-        this.renderStickyRows(offset);
+        this.renderStickyRows(nextOffset);
         offsetFromTop = nextOffset;
       }
-    };
-
-    /*this._viewport.elementScrolled().subscribe((event) => {
-      console.log((event.target as HTMLElement).scrollTop);
-      this.renderStickyRows(Math.round((event.target as HTMLElement).scrollTop));
-    })*/
+    });*/
 
     // FIXME unsubscribe
     /**
@@ -191,6 +197,11 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
     this._viewport.attach(this);
   }
 
+  ngOnInit() {
+    super.ngOnInit();
+    this.fixedColumnSize = true;
+  }
+
   ngOnDestroy(): void {
     this._destroyed.next();
     this._destroyed.complete();
@@ -204,6 +215,59 @@ export class MatVirtualTable<T> extends CdkTable<T> implements CdkVirtualDataSou
       this.renderFlexHeaderRows(offsetFromTop);
     }
   }
+
+
+
+
+
+  private stickyPositions: Map<HTMLElement, number>;
+
+  setSticky(offset: number) {
+    const a = Array.from(this._viewport.elementRef.nativeElement.getElementsByClassName(this.stickyCssClass));
+
+    a.forEach((el) => {
+      const parent = el.parentElement as HTMLElement;
+      let baseOffset = 0;
+      if (this.stickyPositions.has(parent)) {
+        baseOffset = this.stickyPositions.get(parent)!;
+      }
+      (el as HTMLElement).style.top = `-${-baseOffset + offset}px`;
+    });
+  }
+
+  private stickySelector = `.${this.stickyCssClass}`;
+  private initStickyPositions() {
+    this.stickyPositions = new Map<HTMLElement, number>();
+    Array.from(this._viewport.elementRef.nativeElement.getElementsByClassName(this.stickyCssClass))
+    .forEach(el => {
+      const parent = el.parentElement as HTMLElement;
+      if (!this.stickyPositions.has(parent)) {
+        this.stickyPositions.set(parent, parent.offsetTop);
+      }
+    });
+  }
+
+  private isStickyEnabled(): boolean {
+    return !!this._viewport && (this['_headerRowDefs'] as CdkHeaderRowDef[])
+    .map(def => def.sticky)
+    .reduce((prevState, state) => prevState && state, true);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   /**
    * Calculates the offset of each header row from the top of the table, then

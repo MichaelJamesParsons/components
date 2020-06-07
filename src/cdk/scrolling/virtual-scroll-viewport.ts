@@ -153,12 +153,6 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
   /** Subscription to changes in the viewport size. */
   private _viewportChanges = Subscription.EMPTY;
 
-  /**
-   * FIXME This is a hack to listen for scroll changes synchronously. Find a
-   *  better solution.
-   */
-  tableScrollHandler = (offset: number) => {};
-
   constructor(public elementRef: ElementRef<HTMLElement>,
               private _changeDetectorRef: ChangeDetectorRef,
               ngZone: NgZone,
@@ -284,10 +278,10 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
 
   /** Sets the currently rendered range of indices. */
   setRenderedRange(range: ListRange) {
-    const audit = LatencyAuditor.beginAudit('FS', false);
+    // const audit = LatencyAuditor.beginAudit('FS', false);
     if (!rangesEqual(this._renderedRange, range)) {
       this._renderedRangeSubject.next(this._renderedRange = range);
-      audit.recordAndReset('rrs');
+      // audit.recordAndReset('rrs');
       this._markChangeDetectionNeeded(() => this._scrollStrategy.onContentRendered());
     }
     // audit.stop();
@@ -313,9 +307,6 @@ export class CdkVirtualScrollViewport extends CdkScrollable implements OnInit, O
     const axisDirection = isHorizontal && isRtl ? -1 : 1;
     let transform = `translate${axis}(${Number(axisDirection * offset)}px)`;
     this._renderedContentOffset = offset;
-
-    // FIXME This is a hack. See JSDoc for context.
-    this.tableScrollHandler(this._renderedContentOffset);
 
     if (to === 'to-end') {
       transform += ` translate${axis}(-100%)`;

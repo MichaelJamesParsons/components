@@ -181,6 +181,7 @@ export interface RenderRow<T> {
   template: CDK_TABLE_TEMPLATE,
   host: {
     'class': 'cdk-table',
+    '[class.fixed-columns]': 'fixedColumnSize',
   },
   encapsulation: ViewEncapsulation.None,
   // The "OnPush" status for the `MatTable` component is effectively a noop, so we are removing it.
@@ -310,6 +311,8 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
 
   /** Whether the no data row is currently showing anything. */
   private _isShowingNoDataRow = false;
+
+  @Input() fixedColumnSize = false;
 
   // @Internal
   /**
@@ -539,7 +542,8 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
         (record: IterableChangeRecord<RenderRow<T>>) => record.item.data,
     );
 
-    /*changes.forEachOperation(
+    /*const viewContainer = this._rowOutlet.viewContainer;
+    changes.forEachOperation(
         (record: IterableChangeRecord<RenderRow<T>>, prevIndex: number|null,
          currentIndex: number|null) => {
           if (record.previousIndex == null) {
@@ -550,14 +554,14 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
             const view = <RowViewRef<T>>viewContainer.get(prevIndex!);
             viewContainer.move(view!, currentIndex);
           }
-        });
+        });*/
 
     // Update the meta context of a row's context data (index, count, first, last, ...)
-    this._updateRowIndexContext();
+    // this._updateRowIndexContext();
 
     // Update rows that did not get added/removed/moved but may have had their identity changed,
     // e.g. if trackBy matched data on some property but the actual data reference changed.
-    changes.forEachIdentityChange((record: IterableChangeRecord<RenderRow<T>>) => {
+    /*changes.forEachIdentityChange((record: IterableChangeRecord<RenderRow<T>>) => {
       const rowView = <RowViewRef<T>>viewContainer.get(record.currentIndex!);
       rowView.context.$implicit = record.item.data;
     });*/
@@ -708,8 +712,11 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
 
     // Clear the left and right positioning from all columns in the table across all rows since
     // sticky columns span across all table sections (header, data, footer)
-    this._stickyStyler.clearStickyPositioning(
-        [...headerRows, ...dataRows, ...footerRows], ['left', 'right']);
+    if (!this.fixedColumnSize) {
+      // FIXME how does this behave when sticky headers or footers are present?
+      this._stickyStyler.clearStickyPositioning(
+          [...headerRows, ...dataRows, ...footerRows], ['left', 'right']);
+    }
 
     // Update the sticky styles for each header row depending on the def's sticky state
     headerRows.forEach((headerRow, i) => {
@@ -955,7 +962,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
     const stickyStartStates = columnDefs.map(columnDef => columnDef.sticky);
     const stickyEndStates = columnDefs.map(columnDef => columnDef.stickyEnd);
-    this._stickyStyler.updateStickyColumns(rows, stickyStartStates, stickyEndStates);
+    this._stickyStyler.updateStickyColumns(rows, stickyStartStates, stickyEndStates, this.fixedColumnSize);
   }
 
   // @Internal
@@ -1005,16 +1012,14 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    * Create the embedded view for the data row template and place it in the correct index location
    * within the data row view container.
    */
-  /*private _insertRow(renderRow: RenderRow<T>, renderIndex: number) {
+  private _insertRow(renderRow: RenderRow<T>, renderIndex: number) {
     const rowDef = renderRow.rowDef;
-    // FIXME Update context, similar to CdkVirtualForOfContext.
     const context: RowContext<T> = {$implicit: renderRow.data};
     this._renderRow(this._rowOutlet, rowDef, renderIndex, context);
-  }*/
+  }
 
   private _insertRowAndReturn(renderRow: RenderRow<T>, renderIndex: number): EmbeddedViewRef<RowContext<T>> {
     const rowDef = renderRow.rowDef;
-    // FIXME Update context, similar to CdkVirtualForOfContext.
     const context: RowContext<T> = {$implicit: renderRow.data};
 
     // TODO(andrewseguin): enforce that one outlet was instantiated from createEmbeddedView
