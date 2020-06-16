@@ -7,7 +7,7 @@
  */
 
 import {EmbeddedViewRef, IterableChangeRecord, IterableChanges, ViewContainerRef} from '@angular/core';
-import {ViewRepeater, ViewRepeaterItemChanged, ViewRepeaterItemContext, ViewRepeaterItemContextFactory, ViewRepeaterOperation} from '@angular/cdk/view';
+import {ViewRepeater, ViewRepeaterItemChanged, ViewRepeaterItemContext, ViewRepeaterItemContextFactory, ViewRepeaterItemValueResolver, ViewRepeaterOperation} from '@angular/cdk/view';
 
 /**
  * A repeater that destroys views when they are removed from a
@@ -22,6 +22,7 @@ export class DisposeViewRepeaterStrategy<T, R, C extends ViewRepeaterItemContext
   applyChanges(changes: IterableChanges<R>,
                viewContainerRef: ViewContainerRef,
                itemContextFactory: ViewRepeaterItemContextFactory<T, R, C>,
+               itemValueResolver: ViewRepeaterItemValueResolver<R>,
                onViewChanged?: ViewRepeaterItemChanged<R, C>) {
     changes.forEachOperation(
         (record: IterableChangeRecord<R>,
@@ -33,6 +34,7 @@ export class DisposeViewRepeaterStrategy<T, R, C extends ViewRepeaterItemContext
             const itemContext = itemContextFactory(record, adjustedPreviousIndex, currentIndex);
             const view = viewContainerRef.createEmbeddedView(
                 itemContext.templateRef, itemContext.context, itemContext.index);
+            view.context.$implicit = itemValueResolver(record);
             operation = ViewRepeaterOperation.INSERTED;
             context = view.context;
           } else if (currentIndex == null) {
@@ -41,6 +43,7 @@ export class DisposeViewRepeaterStrategy<T, R, C extends ViewRepeaterItemContext
           } else {
             const view = viewContainerRef.get(adjustedPreviousIndex!) as EmbeddedViewRef<C>;
             viewContainerRef.move(view!, currentIndex);
+            view.context.$implicit = itemValueResolver(record);
             operation = ViewRepeaterOperation.MOVED;
             context = view.context;
           }

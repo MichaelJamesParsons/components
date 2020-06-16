@@ -477,6 +477,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
         (record: IterableChangeRecord<RenderRow<T>>,
          adjustedPreviousIndex: number | null,
          currentIndex: number | null) => this._getEmbedArgsForItem(record.item, currentIndex!),
+        record => record.item.data,
         (operation, record, viewContext) => {
           if (operation === ViewRepeaterOperation.INSERTED && viewContext) {
             this._renderCellTemplateForItem(record.item.rowDef, viewContext);

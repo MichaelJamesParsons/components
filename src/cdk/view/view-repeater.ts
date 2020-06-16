@@ -78,6 +78,7 @@ export interface ViewRepeater<T, R, C extends ViewRepeaterItemContext<T>> {
       changes: IterableChanges<R>,
       viewContainerRef: ViewContainerRef,
       itemContextFactory: ViewRepeaterItemContextFactory<T, R, C>,
+      itemValueResolver: ViewRepeaterItemValueResolver<R>,
       onViewChanged?: ViewRepeaterItemChanged<R, C>): void;
   detach(): void;
 }

@@ -7,7 +7,7 @@
  */
 
 import {EmbeddedViewRef, IterableChangeRecord, IterableChanges, IterableDiffer, ViewContainerRef} from '@angular/core';
-import {ViewRepeater, ViewRepeaterItemChanged, ViewRepeaterItemContext, ViewRepeaterItemContextFactory, ViewRepeaterItemInsertArgs, ViewRepeaterOperation} from '@angular/cdk/view';
+import {ViewRepeater, ViewRepeaterItemChanged, ViewRepeaterItemContext, ViewRepeaterItemContextFactory, ViewRepeaterItemInsertArgs, ViewRepeaterItemValueResolver, ViewRepeaterOperation} from '@angular/cdk/view';
 
 
 /**
@@ -41,6 +41,7 @@ export class RecycleViewRepeaterStrategy<T, R, C extends ViewRepeaterItemContext
   applyChanges(changes: IterableChanges<R>,
                viewContainerRef: ViewContainerRef,
                itemContextFactory: ViewRepeaterItemContextFactory<T, R, C>,
+               itemValueResolver: ViewRepeaterItemValueResolver<R>,
                onViewChanged?: ViewRepeaterItemChanged<R, C>) {
     // Rearrange the views to put them in the right location.
     changes.forEachOperation((record: IterableChangeRecord<R>,
@@ -53,6 +54,7 @@ export class RecycleViewRepeaterStrategy<T, R, C extends ViewRepeaterItemContext
             record, adjustedPreviousIndex, currentIndex);
         const view = this._insertView(
             wrappedItemContextFactory, currentIndex!, viewContainerRef);
+        view.context.$implicit = itemValueResolver(record);
         operation = ViewRepeaterOperation.INSERTED;
         context = view.context;
       } else if (currentIndex == null) {  // Item removed.
@@ -60,6 +62,7 @@ export class RecycleViewRepeaterStrategy<T, R, C extends ViewRepeaterItemContext
         operation = ViewRepeaterOperation.REMOVED;
       } else {  // Item moved.
         const view = this._moveView(adjustedPreviousIndex!, currentIndex!, viewContainerRef);
+        view.context.$implicit = itemValueResolver(record);
         operation = ViewRepeaterOperation.MOVED;
         context = view.context;
       }
