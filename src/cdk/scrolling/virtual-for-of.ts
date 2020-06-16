@@ -304,8 +304,7 @@ export class CdkVirtualForOf<T> implements CollectionViewer, DoCheck, OnDestroy 
         this._viewContainerRef,
         (record: IterableChangeRecord<T>,
          adjustedPreviousIndex: number | null,
-         currentIndex: number | null) => this._getEmbedArgsForItem(record, currentIndex!),
-        (record) => record.item);
+         currentIndex: number | null) => this._getEmbedArgsForItem(record, currentIndex!));
 
     // Update $implicit for any items that had an identity change.
     changes.forEachIdentityChange((record: IterableChangeRecord<T>) => {

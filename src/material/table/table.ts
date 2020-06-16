@@ -8,7 +8,7 @@
 
 import {CDK_TABLE_TEMPLATE, CdkTable, CDK_TABLE} from '@angular/cdk/table';
 import {ChangeDetectionStrategy, Component, ViewEncapsulation} from '@angular/core';
-import {DisposeViewRepeaterStrategy, VIEW_REPEATER_STRATEGY} from '@angular/cdk/view';
+import {DisposeViewRepeaterStrategy, RecycleViewRepeaterStrategy, VIEW_REPEATER_STRATEGY} from '@angular/cdk/view';
 
 /**
  * Wrapper for the CdkTable with Material design styles.
@@ -22,7 +22,7 @@ import {DisposeViewRepeaterStrategy, VIEW_REPEATER_STRATEGY} from '@angular/cdk/
     'class': 'mat-table',
   },
   providers: [
-    {provide: VIEW_REPEATER_STRATEGY, useClass: DisposeViewRepeaterStrategy},
+    {provide: VIEW_REPEATER_STRATEGY, useClass: RecycleViewRepeaterStrategy},
     {provide: CdkTable, useExisting: MatTable},
     {provide: CDK_TABLE, useExisting: MatTable}
   ],

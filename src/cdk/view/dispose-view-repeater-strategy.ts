@@ -6,8 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {IterableChangeRecord, IterableChanges, ViewContainerRef} from '@angular/core';
-import {ViewRepeater, ViewRepeaterItemContext, ViewRepeaterItemContextFactory, ViewRepeaterItemValueResolver} from '@angular/cdk/view';
+import {EmbeddedViewRef, IterableChangeRecord, IterableChanges, ViewContainerRef} from '@angular/core';
+import {ViewRepeater, ViewRepeaterItemChanged, ViewRepeaterItemContext, ViewRepeaterItemContextFactory, ViewRepeaterOperation} from '@angular/cdk/view';
 
 /**
  * A repeater that destroys views when they are removed from a
@@ -22,23 +22,31 @@ export class DisposeViewRepeaterStrategy<T, R, C extends ViewRepeaterItemContext
   applyChanges(changes: IterableChanges<R>,
                viewContainerRef: ViewContainerRef,
                itemContextFactory: ViewRepeaterItemContextFactory<T, R, C>,
-               itemValueResolver: ViewRepeaterItemValueResolver<R>) {
+               onViewChanged?: ViewRepeaterItemChanged<R, C>) {
     changes.forEachOperation(
         (record: IterableChangeRecord<R>,
          adjustedPreviousIndex: number | null,
          currentIndex: number | null) => {
+          let operation: ViewRepeaterOperation;
+          let context: C|undefined;
           if (record.previousIndex == null) {
-            const insertContext = itemContextFactory(record, adjustedPreviousIndex, currentIndex);
+            const itemContext = itemContextFactory(record, adjustedPreviousIndex, currentIndex);
             const view = viewContainerRef.createEmbeddedView(
-                insertContext.templateRef, insertContext.context, insertContext.index);
-            if (insertContext.afterViewInserted) {
-              insertContext.afterViewInserted(view);
-            }
+                itemContext.templateRef, itemContext.context, itemContext.index);
+            operation = ViewRepeaterOperation.INSERTED;
+            context = view.context;
           } else if (currentIndex == null) {
             viewContainerRef.remove(adjustedPreviousIndex!);
+            operation = ViewRepeaterOperation.REMOVED;
           } else {
-            const view = viewContainerRef.get(adjustedPreviousIndex!);
+            const view = viewContainerRef.get(adjustedPreviousIndex!) as EmbeddedViewRef<C>;
             viewContainerRef.move(view!, currentIndex);
+            operation = ViewRepeaterOperation.MOVED;
+            context = view.context;
+          }
+
+          if (onViewChanged) {
+            onViewChanged(operation, record, context);
           }
         });
   }

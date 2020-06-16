@@ -6,7 +6,16 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {EmbeddedViewRef, InjectionToken, IterableChangeRecord, IterableChanges, TemplateRef, ViewContainerRef} from '@angular/core';
+import {InjectionToken, IterableChangeRecord, IterableChanges, TemplateRef, ViewContainerRef} from '@angular/core';
+
+/**
+ * The operations that may be performed in a view repeater.
+ */
+export enum ViewRepeaterOperation {
+  INSERTED,
+  MOVED,
+  REMOVED,
+}
 
 /**
  * The context for an embedded view in the repeater's view container.
@@ -24,10 +33,9 @@ export interface ViewRepeaterItemContext<T> {
  * @template C The type for the context passed to each embedded view.
  */
 export interface ViewRepeaterItemInsertArgs<C> {
-  templateRef: TemplateRef<C>,
   context?: C,
   index?: number,
-  afterViewInserted?: (view: EmbeddedViewRef<C>) => void;
+  templateRef: TemplateRef<C>,
 }
 
 /**
@@ -51,6 +59,14 @@ export type ViewRepeaterItemValueResolver<R> =
     (record: IterableChangeRecord<R>) => any;
 
 /**
+ * Extracts the value of an item from an {@link IterableChangeRecord}.
+ *
+ * @template C The type for the context passed to each embedded view.
+ */
+export type ViewRepeaterItemChanged<R, C> =
+    (operation: ViewRepeaterOperation, record: IterableChangeRecord<R>, viewContext?: C) => void;
+
+/**
  * Describes a strategy for rendering items in a {@link ViewContainerRef}.
  *
  * @template T The type for the embedded view's $implicit property.
@@ -62,7 +78,7 @@ export interface ViewRepeater<T, R, C extends ViewRepeaterItemContext<T>> {
       changes: IterableChanges<R>,
       viewContainerRef: ViewContainerRef,
       itemContextFactory: ViewRepeaterItemContextFactory<T, R, C>,
-      itemValueResolver: ViewRepeaterItemValueResolver<R>): void;
+      onViewChanged?: ViewRepeaterItemChanged<R, C>): void;
   detach(): void;
 }
 

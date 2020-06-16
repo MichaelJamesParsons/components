@@ -11,64 +11,15 @@ import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {CollectionViewer, DataSource, isDataSource} from '@angular/cdk/collections';
 import {Platform} from '@angular/cdk/platform';
 import {DOCUMENT} from '@angular/common';
-import {
-  AfterContentChecked,
-  Attribute,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  ContentChildren,
-  Directive,
-  ElementRef,
-  EmbeddedViewRef,
-  Inject,
-  Input,
-  isDevMode,
-  IterableChangeRecord,
-  IterableDiffer,
-  IterableDiffers,
-  OnDestroy,
-  OnInit,
-  Optional,
-  QueryList,
-  TemplateRef,
-  TrackByFunction,
-  ViewChild,
-  ViewContainerRef,
-  ViewEncapsulation,
-  ContentChild,
-} from '@angular/core';
-import {
-  BehaviorSubject,
-  Observable,
-  of as observableOf,
-  Subject,
-  Subscription,
-  isObservable,
-} from 'rxjs';
+import {AfterContentChecked, Attribute, ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, ContentChildren, Directive, ElementRef, EmbeddedViewRef, Inject, Input, isDevMode, IterableChangeRecord, IterableDiffer, IterableDiffers, OnDestroy, OnInit, Optional, QueryList, TemplateRef, TrackByFunction, ViewChild, ViewContainerRef, ViewEncapsulation,} from '@angular/core';
+import {BehaviorSubject, isObservable, Observable, of as observableOf, Subject, Subscription,} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 import {CdkColumnDef} from './cell';
-import {
-  BaseRowDef,
-  CdkCellOutlet,
-  CdkCellOutletMultiRowContext,
-  CdkCellOutletRowContext,
-  CdkFooterRowDef,
-  CdkHeaderRowDef,
-  CdkRowDef,
-  CdkNoDataRow
-} from './row';
+import {BaseRowDef, CdkCellOutlet, CdkCellOutletMultiRowContext, CdkCellOutletRowContext, CdkFooterRowDef, CdkHeaderRowDef, CdkNoDataRow, CdkRowDef} from './row';
 import {StickyStyler} from './sticky-styler';
-import {
-  getTableDuplicateColumnNameError,
-  getTableMissingMatchingRowDefError,
-  getTableMissingRowDefsError,
-  getTableMultipleDefaultRowDefsError,
-  getTableUnknownColumnError,
-  getTableUnknownDataSourceError
-} from './table-errors';
+import {getTableDuplicateColumnNameError, getTableMissingMatchingRowDefError, getTableMissingRowDefsError, getTableMultipleDefaultRowDefsError, getTableUnknownColumnError, getTableUnknownDataSourceError} from './table-errors';
 import {CDK_TABLE} from './tokens';
-import {DisposeViewRepeaterStrategy, VIEW_REPEATER_STRATEGY, ViewRepeater, ViewRepeaterItemInsertArgs} from '@angular/cdk/view';
+import {DisposeViewRepeaterStrategy, RecycleViewRepeaterStrategy, VIEW_REPEATER_STRATEGY, ViewRepeater, ViewRepeaterItemInsertArgs, ViewRepeaterOperation} from '@angular/cdk/view';
 
 /** Interface used to provide an outlet for rows to be inserted into. */
 export interface RowOutlet {
@@ -189,7 +140,7 @@ export interface RenderRow<T> {
   changeDetection: ChangeDetectionStrategy.Default,
   providers: [
     {provide: CDK_TABLE, useExisting: CdkTable},
-    {provide: VIEW_REPEATER_STRATEGY, useClass: DisposeViewRepeaterStrategy},
+    {provide: VIEW_REPEATER_STRATEGY, useClass: RecycleViewRepeaterStrategy},
   ]
 })
 export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDestroy, OnInit {
@@ -526,7 +477,11 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
         (record: IterableChangeRecord<RenderRow<T>>,
          adjustedPreviousIndex: number | null,
          currentIndex: number | null) => this._getEmbedArgsForItem(record.item, currentIndex!),
-        (record) => record.item.data,
+        (operation, record, viewContext) => {
+          if (operation === ViewRepeaterOperation.INSERTED && viewContext) {
+            this._renderCellTemplateForItem(record.item.rowDef, viewContext);
+          }
+        },
     );
 
     // Update the meta context of a row's context data (index, count, first, last, ...)
@@ -947,7 +902,6 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
       templateRef: rowDef.template,
       context,
       index,
-      afterViewInserted: view => this._renderCellTemplateForItem(rowDef, context, view),
     };
   }
 
@@ -960,11 +914,11 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
       outlet: RowOutlet, rowDef: BaseRowDef, index: number, context: RowContext<T> = {}): EmbeddedViewRef<RowContext<T>> {
     // TODO(andrewseguin): enforce that one outlet was instantiated from createEmbeddedView
     const view = outlet.viewContainer.createEmbeddedView(rowDef.template, context, index);
-    this._renderCellTemplateForItem(rowDef, context, view);
+    this._renderCellTemplateForItem(rowDef, context);
     return view;
   }
 
-  private _renderCellTemplateForItem(rowDef: BaseRowDef, context: RowContext<T>, view: EmbeddedViewRef<RowContext<T>>) {
+  private _renderCellTemplateForItem(rowDef: BaseRowDef, context: RowContext<T>) {
     for (let cellTemplate of this._getCellTemplates(rowDef)) {
       if (CdkCellOutlet.mostRecentCellOutlet) {
         CdkCellOutlet.mostRecentCellOutlet._viewContainer.createEmbeddedView(cellTemplate, context);
