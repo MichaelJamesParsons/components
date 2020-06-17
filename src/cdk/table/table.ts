@@ -11,7 +11,7 @@ import {BooleanInput, coerceBooleanProperty} from '@angular/cdk/coercion';
 import {CollectionViewer, DataSource, isDataSource} from '@angular/cdk/collections';
 import {Platform} from '@angular/cdk/platform';
 import {DOCUMENT} from '@angular/common';
-import {AfterContentChecked, Attribute, ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, ContentChildren, Directive, ElementRef, EmbeddedViewRef, Inject, Input, isDevMode, IterableChangeRecord, IterableDiffer, IterableDiffers, NgZone, OnDestroy, OnInit, Optional, QueryList, TemplateRef, TrackByFunction, ViewChild, ViewContainerRef, ViewEncapsulation,} from '@angular/core';
+import {AfterContentChecked, Attribute, ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, ContentChildren, Directive, ElementRef, EmbeddedViewRef, Inject, Input, isDevMode, IterableChangeRecord, IterableDiffer, IterableDiffers, OnDestroy, OnInit, Optional, QueryList, TemplateRef, TrackByFunction, ViewChild, ViewContainerRef, ViewEncapsulation,} from '@angular/core';
 import {BehaviorSubject, isObservable, Observable, of as observableOf, Subject, Subscription,} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 import {CdkColumnDef} from './cell';
@@ -247,7 +247,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   private _cachedRenderRowsMap = new Map<T, WeakMap<CdkRowDef<T>, RenderRow<T>[]>>();
 
   /** Whether the table is applied to a native `<table>`. */
-  private _isNativeHtmlTable: boolean;
+  protected _isNativeHtmlTable: boolean;
 
   /**
    * Utility class that is responsible for applying the appropriate sticky positioning styles to
@@ -312,7 +312,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
       this._switchDataSource(dataSource);
     }
   }
-  private _dataSource: CdkTableDataSourceInput<T>;
+  protected _dataSource: CdkTableDataSourceInput<T>;
 
   /**
    * Whether to allow multiple rows per data object by evaluating which rows evaluate their 'when'
@@ -380,8 +380,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
       protected readonly _elementRef: ElementRef, @Attribute('role') role: string,
       @Inject(VIEW_REPEATER_STRATEGY) protected readonly _viewRepeater: ViewRepeater<T, RenderRow<T>, RowContext<T>>,
       @Optional() protected readonly _dir: Directionality, @Inject(DOCUMENT) _document: any,
-      private _platform: Platform,
-      private zone: NgZone) {
+      private _platform: Platform) {
     if (!role) {
       this._elementRef.nativeElement.setAttribute('role', 'grid');
     }
@@ -762,7 +761,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    * render change subscription if one exists. If the data source is null, interpret this by
    * clearing the row outlet. Otherwise start listening for new data.
    */
-  private _switchDataSource(dataSource: CdkTableDataSourceInput<T>) {
+  protected _switchDataSource(dataSource: CdkTableDataSourceInput<T>) {
     this._data = [];
 
     if (isDataSource(this.dataSource)) {

@@ -7,10 +7,15 @@
  */
 
 import {NgModule} from '@angular/core';
+import {CdkVirtualTable} from '@angular/cdk-experimental/virtual-table/virtual-table';
+import {CdkTableModule} from '@angular/cdk/table';
 
 
 @NgModule({
-  declarations: [],
-  exports: [],
+  declarations: [CdkVirtualTable],
+  exports: [CdkVirtualTable],
+  imports: [
+      CdkTableModule,
+  ]
 })
 export class CdkVirtualTableModule {}
