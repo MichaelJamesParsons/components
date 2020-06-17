@@ -117,12 +117,15 @@ export class CdkVirtualTable<T> extends CdkTable<T> implements OnDestroy {
       private readonly zone: NgZone) {
     super(_differs, _changeDetectorRef, _elementRef, role, _viewRepeater, _dir, _document, _platform);
 
+    // FIXME this is a hack.
+    this.fixedColumnSize = true;
+
     // Update viewChange subscribers when the virtual scroll viewport's rendered
     // range changes.
     this.subscription.add(
         this._viewport.renderedRangeStream.subscribe(range => {
           this._renderedRange = range;
-          this.zone.run(() => this.viewChange.next(range));
+          this.viewChange.next(range);
         }));
 
     // Update sticky styles when the virtual scroll viewport's translateY

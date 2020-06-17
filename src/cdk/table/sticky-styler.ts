@@ -62,6 +62,8 @@ export class StickyStyler {
     }
   }
 
+  private cachedWidths: number[] = [];
+
   /**
    * Applies sticky left and right positions to the cells of each row according to the sticky
    * states of the rendered column definitions.
@@ -72,7 +74,7 @@ export class StickyStyler {
    *     in this index position should be stuck to the end of the row.
    */
   updateStickyColumns(
-      rows: HTMLElement[], stickyStartStates: boolean[], stickyEndStates: boolean[]) {
+      rows: HTMLElement[], stickyStartStates: boolean[], stickyEndStates: boolean[], useCachedWidths = false) {
     const hasStickyColumns =
         stickyStartStates.some(state => state) || stickyEndStates.some(state => state);
     if (!rows.length || !hasStickyColumns || !this._isBrowser) {
@@ -81,7 +83,7 @@ export class StickyStyler {
 
     const firstRow = rows[0];
     const numCells = firstRow.children.length;
-    const cellWidths: number[] = this._getCellWidths(firstRow);
+    const cellWidths: number[] = this._getCellWidths(firstRow, useCachedWidths);
 
     const startPositions = this._getStickyStartColumnPositions(cellWidths, stickyStartStates);
     const endPositions = this._getStickyEndColumnPositions(cellWidths, stickyEndStates);
@@ -234,7 +236,11 @@ export class StickyStyler {
   }
 
   /** Gets the widths for each cell in the provided row. */
-  _getCellWidths(row: HTMLElement): number[] {
+  _getCellWidths(row: HTMLElement, useCachedWidths = false): number[] {
+    if (useCachedWidths && this.cachedWidths.length > 0) {
+      return this.cachedWidths;
+    }
+
     const cellWidths: number[] = [];
     const firstRowCells = row.children;
     for (let i = 0; i < firstRowCells.length; i++) {
@@ -242,6 +248,7 @@ export class StickyStyler {
       cellWidths.push(cell.getBoundingClientRect().width);
     }
 
+    this.cachedWidths = cellWidths;
     return cellWidths;
   }
 

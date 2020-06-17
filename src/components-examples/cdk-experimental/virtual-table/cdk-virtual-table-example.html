@@ -1,9 +1,9 @@
-<cdk-virtual-scroll-viewport id="viewport" [itemSize]="48" [style.height.px]="600" [maxBufferPx]="1000" [minBufferPx]="500">
+<cdk-virtual-scroll-viewport id="viewport" [itemSize]="21" [style.height.px]="600" [minBufferPx]="300" [maxBufferPx]="800">
   <table cdk-virtual-table [dataSource]="dataSource">
     <!-- Position Column -->
     <ng-container cdkColumnDef="position">
       <th cdk-header-cell *cdkHeaderCellDef> No. </th>
-      <td cdk-cell *cdkCellDef="let element" style="height: 48px"> {{element.position}} </td>
+      <td cdk-cell *cdkCellDef="let element"> {{element.position}} </td>
     </ng-container>
 
     <!-- Name Column -->

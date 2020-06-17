@@ -131,6 +131,7 @@ export interface RenderRow<T> {
   template: CDK_TABLE_TEMPLATE,
   host: {
     'class': 'cdk-table',
+    '[class.cdk-table-fixed-columns]': 'fixedColumnSize',
   },
   encapsulation: ViewEncapsulation.None,
   // The "OnPush" status for the `MatTable` component is effectively a noop, so we are removing it.
@@ -263,6 +264,8 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
 
   /** Whether the no data row is currently showing anything. */
   private _isShowingNoDataRow = false;
+
+  @Input() fixedColumnSize = false;
 
   /**
    * Tracking function that will be used to check the differences in data changes. Used similarly
@@ -612,8 +615,10 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
 
     // Clear the left and right positioning from all columns in the table across all rows since
     // sticky columns span across all table sections (header, data, footer)
-    this._stickyStyler.clearStickyPositioning(
-        [...headerRows, ...dataRows, ...footerRows], ['left', 'right']);
+    if (!this.fixedColumnSize) {
+      this._stickyStyler.clearStickyPositioning(
+          [...headerRows, ...dataRows, ...footerRows], ['left', 'right']);
+    }
 
     // Update the sticky styles for each header row depending on the def's sticky state
     headerRows.forEach((headerRow, i) => {
@@ -851,7 +856,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
     const stickyStartStates = columnDefs.map(columnDef => columnDef.sticky);
     const stickyEndStates = columnDefs.map(columnDef => columnDef.stickyEnd);
-    this._stickyStyler.updateStickyColumns(rows, stickyStartStates, stickyEndStates);
+    this._stickyStyler.updateStickyColumns(rows, stickyStartStates, stickyEndStates, this.fixedColumnSize);
   }
 
   /** Gets the list of rows that have been rendered in the row outlet. */
