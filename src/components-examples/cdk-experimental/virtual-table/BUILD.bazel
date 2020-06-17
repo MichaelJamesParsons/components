@@ -1,0 +1,27 @@
+load("//tools:defaults.bzl", "ng_module")
+
+package(default_visibility = ["//visibility:public"])
+
+ng_module(
+    name = "virtual-table",
+    srcs = glob(["**/*.ts"]),
+    assets = glob([
+        "**/*.html",
+        "**/*.css",
+    ]),
+    module_name = "@angular/components-examples/cdk-experimental/virtual-table",
+    deps = [
+        "//src/cdk-experimental/virtual-table",
+        "//src/cdk/table",
+        "//src/cdk/scrolling",
+    ],
+)
+
+filegroup(
+    name = "source-files",
+    srcs = glob([
+        "**/*.html",
+        "**/*.css",
+        "**/*.ts",
+    ]),
+)
