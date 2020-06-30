@@ -4,6 +4,7 @@ import {CdkVirtualTableModule} from '@angular/cdk-experimental/virtual-table';
 import {CdkVirtualTableExample} from './cdk-virtual-table-example';
 import {CdkTableModule} from '@angular/cdk/table';
 import {ScrollingModule} from '@angular/cdk/scrolling';
+import {ScrollingModule as ExperimentalScrolling} from '@angular/cdk-experimental/scrolling'
 
 export {
   CdkVirtualTableExample,
@@ -18,6 +19,7 @@ const EXAMPLES = [
     CdkTableModule,
     CdkVirtualTableModule,
     CommonModule,
+    ExperimentalScrolling,
     ScrollingModule,
   ],
   declarations: EXAMPLES,

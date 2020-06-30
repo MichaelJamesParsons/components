@@ -28,7 +28,7 @@ export class RecycleViewRepeaterStrategy<T, R, C extends ViewRepeaterItemContext
    * The size of the cache used to store templates that are not being used for re-use later.
    * Setting the cache size to `0` will disable caching. Defaults to 20 templates.
    */
-  templateCacheSize: number = 20;
+  templateCacheSize: number = 100;
 
   /**
    * The template cache used to hold on ot template instancess that have been stamped out, but don't
