@@ -79,7 +79,8 @@ export declare class CdkVirtualForOf<T> implements CollectionViewer, DoCheck, On
     get cdkVirtualForOf(): DataSource<T> | Observable<T[]> | NgIterable<T> | null | undefined;
     set cdkVirtualForOf(value: DataSource<T> | Observable<T[]> | NgIterable<T> | null | undefined);
     set cdkVirtualForTemplate(value: TemplateRef<CdkVirtualForOfContext<T>>);
-    cdkVirtualForTemplateCacheSize: number;
+    set cdkVirtualForTemplateCacheSize(size: number | string);
+    get cdkVirtualForTemplateCacheSize(): number | string;
     get cdkVirtualForTrackBy(): TrackByFunction<T> | undefined;
     set cdkVirtualForTrackBy(fn: TrackByFunction<T> | undefined);
     dataStream: Observable<T[] | ReadonlyArray<T>>;
@@ -88,12 +89,13 @@ export declare class CdkVirtualForOf<T> implements CollectionViewer, DoCheck, On
     _viewContainerRef: ViewContainerRef,
     _template: TemplateRef<CdkVirtualForOfContext<T>>,
     _differs: IterableDiffers,
+    _viewRepeater: RecycleViewRepeaterStrategy<T, T, CdkVirtualForOfContext<T>>,
     _viewport: CdkVirtualScrollViewport, ngZone: NgZone);
     measureRangeSize(range: ListRange, orientation: 'horizontal' | 'vertical'): number;
     ngDoCheck(): void;
     ngOnDestroy(): void;
     static ɵdir: i0.ɵɵDirectiveDefWithMeta<CdkVirtualForOf<any>, "[cdkVirtualFor][cdkVirtualForOf]", never, { "cdkVirtualForOf": "cdkVirtualForOf"; "cdkVirtualForTrackBy": "cdkVirtualForTrackBy"; "cdkVirtualForTemplate": "cdkVirtualForTemplate"; "cdkVirtualForTemplateCacheSize": "cdkVirtualForTemplateCacheSize"; }, {}, never>;
-    static ɵfac: i0.ɵɵFactoryDef<CdkVirtualForOf<any>, [null, null, null, { skipSelf: true; }, null]>;
+    static ɵfac: i0.ɵɵFactoryDef<CdkVirtualForOf<any>, [null, null, null, null, { skipSelf: true; }, null]>;
 }
 
 export declare type CdkVirtualForOfContext<T> = {

@@ -45,6 +45,16 @@
     "src/cdk/testing/private/e2e/query.ts"
   ],
   [
+    "src/cdk/view/dispose-view-repeater-strategy.ts",
+    "src/cdk/view/index.ts",
+    "src/cdk/view/public-api.ts"
+  ],
+  [
+    "src/cdk/view/index.ts",
+    "src/cdk/view/public-api.ts",
+    "src/cdk/view/recycle-view-repeater-strategy.ts"
+  ],
+  [
     "src/material/core/ripple/ripple-ref.ts",
     "src/material/core/ripple/ripple-renderer.ts"
   ],
