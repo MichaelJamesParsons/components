@@ -25,6 +25,8 @@ export const STICKY_DIRECTIONS: StickyDirection[] = ['top', 'bottom', 'left', 'r
  * @docs-private
  */
 export class StickyStyler {
+  private _cachedColumnWidths: number[] = [];
+
   /**
    * @param _isNativeHtmlTable Whether the sticky logic should be based on a table
    *     that uses the native `<table>` element.
@@ -70,9 +72,11 @@ export class StickyStyler {
    *     in this index position should be stuck to the start of the row.
    * @param stickyEndStates A list of boolean states where each state represents whether the cell
    *     in this index position should be stuck to the end of the row.
+   * @param recalculateCellWidths Whether the sticky styler should recalculate the width of each
+   *     column cell. If `false` cached widths will be used instead.
    */
   updateStickyColumns(
-      rows: HTMLElement[], stickyStartStates: boolean[], stickyEndStates: boolean[]) {
+      rows: HTMLElement[], stickyStartStates: boolean[], stickyEndStates: boolean[], recalculateCellWidths = true) {
     const hasStickyColumns =
         stickyStartStates.some(state => state) || stickyEndStates.some(state => state);
     if (!rows.length || !hasStickyColumns || !this._isBrowser) {
@@ -81,7 +85,7 @@ export class StickyStyler {
 
     const firstRow = rows[0];
     const numCells = firstRow.children.length;
-    const cellWidths: number[] = this._getCellWidths(firstRow);
+    const cellWidths: number[] = this._getCellWidths(firstRow, recalculateCellWidths);
 
     const startPositions = this._getStickyStartColumnPositions(cellWidths, stickyStartStates);
     const endPositions = this._getStickyEndColumnPositions(cellWidths, stickyEndStates);
@@ -169,6 +173,10 @@ export class StickyStyler {
     }
   }
 
+  clearColumnWidthCache() {
+    this._cachedColumnWidths = [];
+  }
+
   /**
    * Removes the sticky style on the element by removing the sticky cell CSS class, re-evaluating
    * the zIndex, removing each of the provided sticky directions, and removing the
@@ -234,7 +242,11 @@ export class StickyStyler {
   }
 
   /** Gets the widths for each cell in the provided row. */
-  _getCellWidths(row: HTMLElement): number[] {
+  _getCellWidths(row: HTMLElement, recalculateCellWidths = true): number[] {
+    if (!recalculateCellWidths && this._cachedColumnWidths) {
+      return this._cachedColumnWidths;
+    }
+
     const cellWidths: number[] = [];
     const firstRowCells = row.children;
     for (let i = 0; i < firstRowCells.length; i++) {
@@ -242,6 +254,7 @@ export class StickyStyler {
       cellWidths.push(cell.getBoundingClientRect().width);
     }
 
+    this._cachedColumnWidths = cellWidths;
     return cellWidths;
   }
 

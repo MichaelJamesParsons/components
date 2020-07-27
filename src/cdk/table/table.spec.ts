@@ -1338,6 +1338,71 @@ describe('CdkTable', () => {
     });
   });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  describe('with fixedColumnWidths', () => {
+    //FixedColumnWidthsCdkTableApp
+    function createTestComponentWithTrackyByTable(trackByStrategy: string) {
+      fixture = createComponent(TrackByCdkTableApp);
+
+      component = fixture.componentInstance;
+      component.trackByStrategy = trackByStrategy;
+
+      tableElement = fixture.nativeElement.querySelector('cdk-table');
+      fixture.detectChanges();
+
+      // Each row receives an attribute 'initialIndex' the element's original place
+      getRows(tableElement).forEach((row: Element, index: number) => {
+        row.setAttribute('initialIndex', index.toString());
+      });
+
+      // Prove that the attributes match their indicies
+      const initialRows = getRows(tableElement);
+      expect(initialRows[0].getAttribute('initialIndex')).toBe('0');
+      expect(initialRows[1].getAttribute('initialIndex')).toBe('1');
+      expect(initialRows[2].getAttribute('initialIndex')).toBe('2');
+    }
+  });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   it('should match the right table content with dynamic data source', () => {
     setupTableTestApp(DynamicDataSourceCdkTableApp);
 
@@ -1917,6 +1982,51 @@ class TrackByCdkTableApp {
     }
   }
 }
+
+
+
+
+
+@Component({
+  template: `
+    <cdk-table [dataSource]="dataSource" fixedColumnWidths>
+      <ng-container cdkColumnDef="column_a">
+        <cdk-header-cell *cdkHeaderCellDef> Column A</cdk-header-cell>
+        <cdk-cell *cdkCellDef="let row"> {{row.a}}</cdk-cell>
+      </ng-container>
+
+      <ng-container cdkColumnDef="column_b">
+        <cdk-header-cell *cdkHeaderCellDef> Column B</cdk-header-cell>
+        <cdk-cell *cdkCellDef="let row"> {{row.b}}</cdk-cell>
+      </ng-container>
+
+      <cdk-header-row *cdkHeaderRowDef="columnsToRender"></cdk-header-row>
+      <cdk-row *cdkRowDef="let row; columns: columnsToRender"></cdk-row>
+    </cdk-table>
+  `
+})
+class FixedColumnWidthsCdkTableApp {
+  dataSource: FakeDataSource = new FakeDataSource();
+  columnsToRender = ['column_a', 'column_b'];
+
+  @ViewChild(CdkTable) table: CdkTable<TestData>;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @Component({
   template: `

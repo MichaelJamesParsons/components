@@ -177,8 +177,10 @@ export interface RenderRow<T> {
   selector: 'cdk-table, table[cdk-table]',
   exportAs: 'cdkTable',
   template: CDK_TABLE_TEMPLATE,
+  styleUrls: ['table.css'],
   host: {
     'class': 'cdk-table',
+    '[class.cdk-table-fixed-column-widths]': 'fixedColumnWidths',
   },
   encapsulation: ViewEncapsulation.None,
   // The "OnPush" status for the `MatTable` component is effectively a noop, so we are removing it.
@@ -380,6 +382,19 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   }
   _multiTemplateDataRows: boolean = false;
 
+  /**
+   * Whether to use a fixed table layout. Enabling this option will enforce consistent column widths
+   * for native tables and optimize rendering for any native or flex table using sticky cells.
+   */
+  @Input()
+  get fixedColumnWidths(): boolean {
+    return this._fixedColumnWidths;
+  }
+  set fixedColumnWidths(v: boolean) {
+    this._fixedColumnWidths = coerceBooleanProperty(v);
+  }
+  private _fixedColumnWidths: boolean = false;
+
   // TODO(andrewseguin): Remove max value as the end index
   //   and instead calculate the view on init and scroll.
   /**
@@ -542,7 +557,12 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
 
     this._updateNoDataRow();
-    this.updateStickyColumnStyles();
+
+    // Column widths for tables using fixed layouts, such as flex tables or native tables with
+    // `fixedColumnWidths` enabled, will not change unless either the header rows change or the
+    // table is resized.
+    this.updateStickyColumnStyles((this._isNativeHtmlTable && !this._fixedColumnWidths)
+        || this._headerRowDefChanged);
   }
 
   /** Adds a column definition that was not included as part of the content children. */
@@ -651,15 +671,18 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    * the data source provides a new set of data or when a column definition changes its sticky
    * input. May be called manually for cases where the cell content changes outside of these events.
    */
-  updateStickyColumnStyles() {
+  updateStickyColumnStyles(clearExistingStyles = true) {
     const headerRows = this._getRenderedRows(this._headerRowOutlet);
     const dataRows = this._getRenderedRows(this._rowOutlet);
     const footerRows = this._getRenderedRows(this._footerRowOutlet);
 
-    // Clear the left and right positioning from all columns in the table across all rows since
-    // sticky columns span across all table sections (header, data, footer)
-    this._stickyStyler.clearStickyPositioning(
-        [...headerRows, ...dataRows, ...footerRows], ['left', 'right']);
+    // Left/right sticky styles should only be reset if the column widths have changed.
+    if (clearExistingStyles) {
+      // Clear the left and right positioning from all columns in the table across all rows since
+      // sticky columns span across all table sections (header, data, footer)
+      this._stickyStyler.clearStickyPositioning(
+          [...headerRows, ...dataRows, ...footerRows], ['left', 'right']);
+    }
 
     // Update the sticky styles for each header row depending on the def's sticky state
     headerRows.forEach((headerRow, i) => {
@@ -897,7 +920,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
     const stickyStartStates = columnDefs.map(columnDef => columnDef.sticky);
     const stickyEndStates = columnDefs.map(columnDef => columnDef.stickyEnd);
-    this._stickyStyler.updateStickyColumns(rows, stickyStartStates, stickyEndStates);
+    this._stickyStyler.updateStickyColumns(rows, stickyStartStates, stickyEndStates, !this._fixedColumnWidths);
   }
 
   /** Gets the list of rows that have been rendered in the row outlet. */
@@ -1109,6 +1132,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   }
 
   static ngAcceptInputType_multiTemplateDataRows: BooleanInput;
+  static ngAcceptInputType_fixedColumnWidths: BooleanInput;
 }
 
 /** Utility function that gets a merged list of the entries in an array and values of a Set. */
