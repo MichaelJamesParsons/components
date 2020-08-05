@@ -11,10 +11,12 @@ import {CdkTableExamplesModule} from '@angular/components-examples/cdk/table';
 import {TableExamplesModule} from '@angular/components-examples/material/table';
 import {RouterModule} from '@angular/router';
 import {TableDemo} from './table-demo';
+import {CdkVirtualTableExamplesModule} from '@angular/components-examples/cdk-experimental/virtual-table';
 
 @NgModule({
   imports: [
     CdkTableExamplesModule,
+    CdkVirtualTableExamplesModule,
     TableExamplesModule,
     RouterModule.forChild([{path: '', component: TableDemo}]),
   ],

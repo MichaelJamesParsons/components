@@ -7,21 +7,39 @@
  */
 
 import {NgModule} from '@angular/core';
-import {HeaderRowOutlet, DataRowOutlet, CdkTable, FooterRowOutlet, NoDataRowOutlet} from './table';
 import {
-  CdkCellOutlet, CdkFooterRow, CdkFooterRowDef, CdkHeaderRow, CdkHeaderRowDef, CdkRow,
+  HeaderRowOutlet,
+  DataRowOutlet,
+  CdkTable,
+  FooterRowOutlet,
+  NoDataRowOutlet,
+  CdkVirtualTable
+} from './table';
+import {
+  CdkCellOutlet,
+  CdkFooterRow,
+  CdkFooterRowDef,
+  CdkHeaderRow,
+  CdkHeaderRowDef,
+  CdkRow,
   CdkRowDef,
   CdkNoDataRow
 } from './row';
 import {
-  CdkColumnDef, CdkHeaderCellDef, CdkHeaderCell, CdkCell, CdkCellDef,
-  CdkFooterCellDef, CdkFooterCell
+  CdkColumnDef,
+  CdkHeaderCellDef,
+  CdkHeaderCell,
+  CdkCell,
+  CdkCellDef,
+  CdkFooterCellDef,
+  CdkFooterCell
 } from './cell';
 import {CdkTextColumn} from './text-column';
 import {ScrollingModule} from '@angular/cdk/scrolling';
 
 const EXPORTED_DECLARATIONS = [
   CdkTable,
+  CdkVirtualTable,
   CdkRowDef,
   CdkCellDef,
   CdkCellOutlet,

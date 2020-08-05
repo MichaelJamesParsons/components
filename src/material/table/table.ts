@@ -12,8 +12,16 @@ import {
   CDK_TABLE,
   _CoalescedStyleScheduler
 } from '@angular/cdk/table';
-import {ChangeDetectionStrategy, Component, ViewEncapsulation} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Directive, ViewEncapsulation} from '@angular/core';
 import {_DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY} from '@angular/cdk/collections';
+
+@Directive({
+  selector: 'mat-table:not([virtualTable]), table[mat-table]:not([virtualTable])',
+  providers: [
+    {provide: _VIEW_REPEATER_STRATEGY, useClass: _DisposeViewRepeaterStrategy},
+  ]
+})
+export class MatVirtualTable {}
 
 /**
  * Wrapper for the CdkTable with Material design styles.
@@ -27,9 +35,6 @@ import {_DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY} from '@angular/cd
     'class': 'mat-table',
   },
   providers: [
-    // TODO(michaeljamesparsons) Abstract the view repeater strategy to a directive API so this code
-    //  is only included in the build if used.
-    {provide: _VIEW_REPEATER_STRATEGY, useClass: _DisposeViewRepeaterStrategy},
     {provide: CdkTable, useExisting: MatTable},
     {provide: CDK_TABLE, useExisting: MatTable},
     _CoalescedStyleScheduler,

@@ -92,6 +92,14 @@ export interface RowOutlet {
 type CdkTableDataSourceInput<T> =
     DataSource<T>|Observable<ReadonlyArray<T>|T[]>|ReadonlyArray<T>|T[];
 
+@Directive({
+  selector: 'cdk-table:not([virtualTable]), table[cdk-table]:not([virtualTable])',
+  providers: [
+    {provide: _VIEW_REPEATER_STRATEGY, useClass: _DisposeViewRepeaterStrategy},
+  ]
+})
+export class CdkVirtualTable {}
+
 /**
  * Provides a handle for the table to grab the view container's ng-container to insert data rows.
  * @docs-private
@@ -199,7 +207,6 @@ export interface RenderRow<T> {
   changeDetection: ChangeDetectionStrategy.Default,
   providers: [
     {provide: CDK_TABLE, useExisting: CdkTable},
-    {provide: _VIEW_REPEATER_STRATEGY, useClass: _DisposeViewRepeaterStrategy},
     _CoalescedStyleScheduler,
   ]
 })
@@ -307,7 +314,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   private _cachedRenderRowsMap = new Map<T, WeakMap<CdkRowDef<T>, RenderRow<T>[]>>();
 
   /** Whether the table is applied to a native `<table>`. */
-  private _isNativeHtmlTable: boolean;
+  protected _isNativeHtmlTable: boolean;
 
   /**
    * Utility class that is responsible for applying the appropriate sticky positioning styles to
@@ -837,8 +844,10 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    * Switch to the provided data source by resetting the data and unsubscribing from the current
    * render change subscription if one exists. If the data source is null, interpret this by
    * clearing the row outlet. Otherwise start listening for new data.
+   *
+   * FIXME DO NOT SUBMIT this should not be public.
    */
-  private _switchDataSource(dataSource: CdkTableDataSourceInput<T>) {
+  public _switchDataSource(dataSource: CdkTableDataSourceInput<T>) {
     this._data = [];
 
     if (isDataSource(this.dataSource)) {
