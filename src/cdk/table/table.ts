@@ -98,7 +98,19 @@ type CdkTableDataSourceInput<T> =
     {provide: _VIEW_REPEATER_STRATEGY, useClass: _DisposeViewRepeaterStrategy},
   ]
 })
-export class CdkVirtualTable {}
+export class CdkNonVirtualTable<T> {
+  constructor(private readonly _table: CdkTable<T>) {
+  }
+
+  @Input()
+  get dataSource() {
+    return this._table.dataSource;
+  }
+  set dataSource(v: CdkTableDataSourceInput<T>) {
+    this._table.dataSource = v;
+  }
+}
+
 
 /**
  * Provides a handle for the table to grab the view container's ng-container to insert data rows.
@@ -196,8 +208,10 @@ export interface RenderRow<T> {
   selector: 'cdk-table, table[cdk-table]',
   exportAs: 'cdkTable',
   template: CDK_TABLE_TEMPLATE,
+  styleUrls: ['table.css'],
   host: {
     'class': 'cdk-table',
+    '[class.cdk-table-fixed-column-widths]': 'fixedColumnWidths',
   },
   encapsulation: ViewEncapsulation.None,
   // The "OnPush" status for the `MatTable` component is effectively a noop, so we are removing it.
@@ -314,7 +328,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   private _cachedRenderRowsMap = new Map<T, WeakMap<CdkRowDef<T>, RenderRow<T>[]>>();
 
   /** Whether the table is applied to a native `<table>`. */
-  protected _isNativeHtmlTable: boolean;
+  public _isNativeHtmlTable: boolean;
 
   /**
    * Utility class that is responsible for applying the appropriate sticky positioning styles to
@@ -326,10 +340,19 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    * CSS class added to any row or cell that has sticky positioning applied. May be overriden by
    * table subclasses.
    */
-  protected stickyCssClass: string = 'cdk-table-sticky';
+  public stickyCssClass: string = 'cdk-table-sticky';
 
   /** Whether the no data row is currently showing anything. */
   private _isShowingNoDataRow = false;
+
+  @Input()
+  get scrollableBody(): boolean {
+    return this._scrollableBody;
+  }
+  set scrollableBody(v: boolean) {
+    this._scrollableBody = coerceBooleanProperty(v);
+  }
+  private _scrollableBody: boolean = false;
 
   /**
    * Tracking function that will be used to check the differences in data changes. Used similarly
@@ -370,7 +393,6 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    * table will call the DataSource's `disconnect` function (may be useful for cleaning up any
    * subscriptions registered during the connect process).
    */
-  @Input()
   get dataSource(): CdkTableDataSourceInput<T> {
     return this._dataSource;
   }
@@ -403,8 +425,23 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   }
   _multiTemplateDataRows: boolean = false;
 
+  /**
+   * Whether to use a fixed table layout. Enabling this option will enforce consistent column widths
+   * for native tables and optimize rendering for any native or flex table using sticky cells.
+   */
+  @Input()
+  get fixedColumnWidths(): boolean {
+    return this._fixedColumnWidths;
+  }
+  set fixedColumnWidths(v: boolean) {
+    this._fixedColumnWidths = coerceBooleanProperty(v);
+  }
+  private _fixedColumnWidths: boolean = false;
+
   // TODO(andrewseguin): Remove max value as the end index
   //   and instead calculate the view on init and scroll.
+  //   When the max value is removed, remove the `skip`
+  //   operator from the virtual table's data source.
   /**
    * Stream containing the latest information on what rows are being displayed on screen.
    * Can be used by the data source to as a heuristic of what data should be provided.
@@ -419,6 +456,10 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   @ViewChild(HeaderRowOutlet, {static: true}) _headerRowOutlet: HeaderRowOutlet;
   @ViewChild(FooterRowOutlet, {static: true}) _footerRowOutlet: FooterRowOutlet;
   @ViewChild(NoDataRowOutlet, {static: true}) _noDataRowOutlet: NoDataRowOutlet;
+
+  /**
+   * 1. should users be able to have sticky headers while footers are not?
+   */
 
   /**
    * The column definitions provided by the user that contain what the header, data, and footer
@@ -466,6 +507,8 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
 
     if (this._isNativeHtmlTable) {
       this._applyNativeTableSections();
+    } else if (this._scrollableBody) {
+      this._applyFlexTableSections();
     }
 
     // Set up the trackBy function so that it uses the `RenderRow` as its identity by default. If
@@ -575,7 +618,12 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
 
     this._updateNoDataRow();
-    this.updateStickyColumnStyles();
+
+    // Column widths for tables using fixed layouts, such as flex tables or native tables with
+    // `fixedColumnWidths` enabled, will not change unless either the header rows change or the
+    // table is resized.
+    this.updateStickyColumnStyles((this._isNativeHtmlTable && !this._fixedColumnWidths)
+        || this._headerRowDefChanged);
   }
 
   /** Adds a column definition that was not included as part of the content children. */
@@ -684,15 +732,18 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    * the data source provides a new set of data or when a column definition changes its sticky
    * input. May be called manually for cases where the cell content changes outside of these events.
    */
-  updateStickyColumnStyles() {
+  updateStickyColumnStyles(clearExistingStyles = true) {
     const headerRows = this._getRenderedRows(this._headerRowOutlet);
     const dataRows = this._getRenderedRows(this._rowOutlet);
     const footerRows = this._getRenderedRows(this._footerRowOutlet);
 
-    // Clear the left and right positioning from all columns in the table across all rows since
-    // sticky columns span across all table sections (header, data, footer)
-    this._stickyStyler.clearStickyPositioning(
-        [...headerRows, ...dataRows, ...footerRows], ['left', 'right']);
+    // Left/right sticky styles should only be reset if the column widths have changed.
+    if (clearExistingStyles) {
+      // Clear the left and right positioning from all columns in the table across all rows since
+      // sticky columns span across all table sections (header, data, footer)
+      this._stickyStyler.clearStickyPositioning(
+          [...headerRows, ...dataRows, ...footerRows], ['left', 'right']);
+    }
 
     // Update the sticky styles for each header row depending on the def's sticky state
     headerRows.forEach((headerRow, i) => {
@@ -847,7 +898,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
    *
    * FIXME DO NOT SUBMIT this should not be public.
    */
-  public _switchDataSource(dataSource: CdkTableDataSourceInput<T>) {
+  private _switchDataSource(dataSource: CdkTableDataSourceInput<T>) {
     this._data = [];
 
     if (isDataSource(this.dataSource)) {
@@ -936,7 +987,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
     const stickyStartStates = columnDefs.map(columnDef => columnDef.sticky);
     const stickyEndStates = columnDefs.map(columnDef => columnDef.stickyEnd);
-    this._stickyStyler.updateStickyColumns(rows, stickyStartStates, stickyEndStates);
+    this._stickyStyler.updateStickyColumns(rows, stickyStartStates, stickyEndStates, !this._fixedColumnWidths);
   }
 
   /** Gets the list of rows that have been rendered in the row outlet. */
@@ -1056,6 +1107,28 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
   }
 
+  /** Adds flex table sections (e.g. tbody) and moves the row outlets into them. */
+  private _applyFlexTableSections() {
+    const documentFragment = this._document.createDocumentFragment();
+    const sections = [
+      [this._headerRowOutlet],
+      [this._rowOutlet, this._noDataRowOutlet],
+      [this._footerRowOutlet],
+    ];
+
+    for (const outlets of sections) {
+      const element = this._document.createElement('div');
+      for (const outlet of outlets) {
+        element.appendChild(outlet.elementRef.nativeElement);
+      }
+
+      documentFragment.appendChild(element);
+    }
+
+    // Use a DocumentFragment so we don't hit the DOM on each iteration.
+    this._elementRef.nativeElement.appendChild(documentFragment);
+  }
+
   /** Adds native table sections (e.g. tbody) and moves the row outlets into them. */
   private _applyNativeTableSections() {
     const documentFragment = this._document.createDocumentFragment();
@@ -1156,6 +1229,8 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   }
 
   static ngAcceptInputType_multiTemplateDataRows: BooleanInput;
+  static ngAcceptInputType_fixedColumnWidths: BooleanInput;
+  static ngAcceptInputType_scrollableBody: BooleanInput;
 }
 
 /** Utility function that gets a merged list of the entries in an array and values of a Set. */

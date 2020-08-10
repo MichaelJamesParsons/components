@@ -6,8 +6,28 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ChangeDetectionStrategy, Component, OnInit, ViewEncapsulation} from '@angular/core';
-import {CDK_TABLE_TEMPLATE, CdkTable, _CoalescedStyleScheduler} from '@angular/cdk/table';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Directive,
+  OnInit,
+  ViewEncapsulation
+} from '@angular/core';
+import {
+  CDK_TABLE_TEMPLATE,
+  CdkTable,
+  _CoalescedStyleScheduler,
+  CdkNonVirtualTable
+} from '@angular/cdk/table';
+import {_DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY} from '@angular/cdk/collections';
+
+@Directive({
+  selector: 'mat-table:not([virtualTable]), table[mat-table]:not([virtualTable])',
+  providers: [
+    {provide: _VIEW_REPEATER_STRATEGY, useClass: _DisposeViewRepeaterStrategy},
+  ]
+})
+export class MatNonVirtualTable<T> extends CdkNonVirtualTable<T> {}
 
 @Component({
   selector: 'table[mat-table]',
@@ -28,7 +48,7 @@ import {CDK_TABLE_TEMPLATE, CdkTable, _CoalescedStyleScheduler} from '@angular/c
 })
 export class MatTable<T> extends CdkTable<T> implements OnInit {
   /** Overrides the sticky CSS class set by the `CdkTable`. */
-  protected stickyCssClass = 'mat-mdc-table-sticky';
+  public stickyCssClass = 'mat-mdc-table-sticky';
 
   // After ngOnInit, the `CdkTable` has created and inserted the table sections (thead, tbody,
   // tfoot). MDC requires the `mdc-data-table__content` class to be added to the body.

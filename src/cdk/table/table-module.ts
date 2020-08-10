@@ -13,7 +13,7 @@ import {
   CdkTable,
   FooterRowOutlet,
   NoDataRowOutlet,
-  CdkVirtualTable
+  CdkNonVirtualTable,
 } from './table';
 import {
   CdkCellOutlet,
@@ -39,7 +39,7 @@ import {ScrollingModule} from '@angular/cdk/scrolling';
 
 const EXPORTED_DECLARATIONS = [
   CdkTable,
-  CdkVirtualTable,
+  CdkNonVirtualTable,
   CdkRowDef,
   CdkCellDef,
   CdkCellOutlet,

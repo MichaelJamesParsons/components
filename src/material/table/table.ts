@@ -10,7 +10,8 @@ import {
   CDK_TABLE_TEMPLATE,
   CdkTable,
   CDK_TABLE,
-  _CoalescedStyleScheduler
+  _CoalescedStyleScheduler,
+  CdkNonVirtualTable,
 } from '@angular/cdk/table';
 import {ChangeDetectionStrategy, Component, Directive, ViewEncapsulation} from '@angular/core';
 import {_DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY} from '@angular/cdk/collections';
@@ -21,7 +22,7 @@ import {_DisposeViewRepeaterStrategy, _VIEW_REPEATER_STRATEGY} from '@angular/cd
     {provide: _VIEW_REPEATER_STRATEGY, useClass: _DisposeViewRepeaterStrategy},
   ]
 })
-export class MatVirtualTable {}
+export class MatNonVirtualTable<T> extends CdkNonVirtualTable<T> {}
 
 /**
  * Wrapper for the CdkTable with Material design styles.
@@ -46,5 +47,5 @@ export class MatVirtualTable {}
 })
 export class MatTable<T> extends CdkTable<T> {
   /** Overrides the sticky CSS class set by the `CdkTable`. */
-  protected stickyCssClass = 'mat-table-sticky';
+  public stickyCssClass = 'mat-table-sticky';
 }

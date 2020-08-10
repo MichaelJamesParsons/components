@@ -15,4 +15,6 @@ import {ListRange} from '@angular/cdk/collections';
 export interface CdkVirtualScrollRepeater<T> {
   dataStream: Observable<T[] | ReadonlyArray<T>>;
   measureRangeSize(range: ListRange, orientation: 'horizontal' | 'vertical'): number;
+  contentWrapper?: HTMLElement;
+  spacer?: HTMLElement;
 }

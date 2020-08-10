@@ -8,7 +8,7 @@
 
 import {NgModule} from '@angular/core';
 import {MatCommonModule} from '@angular/material/core';
-import {MatTable} from './table';
+import {MatNonVirtualTable, MatTable} from './table';
 import {CdkTableModule} from '@angular/cdk/table';
 import {
   MatCell,
@@ -32,6 +32,7 @@ import {
 const EXPORTED_DECLARATIONS = [
   // Table
   MatTable,
+  MatNonVirtualTable,
 
   // Template defs
   MatHeaderCellDef,

@@ -13,6 +13,7 @@ import {CdkFixedSizeVirtualScroll} from './fixed-size-virtual-scroll';
 import {CdkScrollable} from './scrollable';
 import {CdkVirtualForOf} from './virtual-for-of';
 import {CdkVirtualScrollViewport} from './virtual-scroll-viewport';
+import {CommonModule} from '@angular/common';
 
 @NgModule({
   exports: [CdkScrollable],
@@ -23,6 +24,7 @@ export class CdkScrollableModule {}
 @NgModule({
   imports: [
     BidiModule,
+    CommonModule,
     PlatformModule,
     CdkScrollableModule
   ],
