@@ -79,6 +79,10 @@ import {
   getTableUnknownDataSourceError
 } from './table-errors';
 import {CDK_TABLE} from './tokens';
+import {
+  _TABLE_LAYOUT_RENDERER,
+  _TableLayoutRenderer
+} from '@angular/cdk/table/table-layout-renderer';
 
 /** Interface used to provide an outlet for rows to be inserted into. */
 export interface RowOutlet {
@@ -452,7 +456,8 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
       // Optional for backwards compatibility, but a view repeater strategy will always
       // be provided.
       @Optional() @Inject(_VIEW_REPEATER_STRATEGY)
-      protected readonly _viewRepeater: _ViewRepeater<T, RenderRow<T>, RowContext<T>>) {
+      protected readonly _viewRepeater: _ViewRepeater<T, RenderRow<T>, RowContext<T>>,
+      @Optional() @Inject(_TABLE_LAYOUT_RENDERER) private readonly _layoutRenderer: _TableLayoutRenderer|null) {
     if (!role) {
       this._elementRef.nativeElement.setAttribute('role', 'grid');
     }
@@ -464,6 +469,11 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
   ngOnInit() {
     this._setupStickyStyler();
 
+    if (this._layoutRenderer) {
+      if (this._isNativeHtmlTable) {
+
+      }
+    }
     if (this._isNativeHtmlTable) {
       this._applyNativeTableSections();
     }
