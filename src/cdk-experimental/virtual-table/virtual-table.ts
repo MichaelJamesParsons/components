@@ -144,13 +144,14 @@ export class CdkVirtualTable<T> implements CdkVirtualScrollRepeater<T>, AfterVie
     };*/
 
     // SOLUTION 2
-/*    this._viewport.transformChanged = () => {
+    let lastOffset = 0;
+    this._viewport.transformChanged = () => {
       const offset = this._viewport.getOffsetToRenderedContentStart() || 0;
-      if (offset !== lastOffset && this.bufferRow) {
+      if (offset !== lastOffset) {
         this.renderStickyRows(offset);
         lastOffset = offset;
       }
-    };*/
+    };
 
     // Update viewChange subscribers when the virtual scroll viewport's rendered
     // range changes.
