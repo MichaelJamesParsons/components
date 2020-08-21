@@ -21,7 +21,7 @@ const ELEMENT_DATA: PeriodicElement[] = [
 ];
 
 const EXPANDED_ELEMENT_DATA: PeriodicElement[] = [];
-for (let x = 0; x < 100; x++) {
+for (let x = 0; x < 300; x++) {
   for (const entry of ELEMENT_DATA) {
     EXPANDED_ELEMENT_DATA.push({...entry, position: entry.position + (10 * x)});
   }

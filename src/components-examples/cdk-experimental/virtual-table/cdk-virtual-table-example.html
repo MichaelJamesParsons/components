@@ -1,4 +1,4 @@
-<cdk-virtual-scroll-viewport id="viewport" autosize [style.height.px]="300">
+<cdk-virtual-scroll-viewport id="viewport" [itemSize]="48" [style.height.px]="1200" [maxBufferPx]="1000" [minBufferPx]="800">
   <table cdk-virtual-table [dataSource]="dataSource" [trackBy]="trackBy">
     <!-- Position Column -->
     <ng-container cdkColumnDef="position">
@@ -28,9 +28,9 @@
       <th cdk-footer-cell *cdkFooterCellDef> Symbol </th>
     </ng-container>
 
-    <tr cdk-header-row *cdkHeaderRowDef="displayedColumns"></tr>
+    <tr cdk-header-row *cdkHeaderRowDef="displayedColumns; sticky: true"></tr>
     <tr cdk-row *cdkRowDef="let row; columns: displayedColumns;"></tr>
-    <tr cdk-footer-row *cdkFooterRowDef="displayedColumns; sticky: false;"></tr>
+<!--    <tr cdk-footer-row *cdkFooterRowDef="displayedColumns; sticky: false;"></tr>-->
   </table>
 </cdk-virtual-scroll-viewport>
 

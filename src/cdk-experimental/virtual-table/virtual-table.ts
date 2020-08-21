@@ -132,8 +132,8 @@ export class CdkVirtualTable<T> extends CdkTable<T> implements OnDestroy {
     // changes.
     // FIXME DO NOT SUBMIT only run this when some rows have sticky styles enabled
     this.subscription.add(
-        this._scrollStrategy.scrolledIndexChange.subscribe(
-            this.renderStickyRows));
+        this._scrollStrategy.scrolledIndexChange.subscribe((v) => this.renderStickyRows(
+            this._viewport.getOffsetToRenderedContentStart() || 0)));
     this._viewport.attach(this);
   }
 
@@ -143,11 +143,11 @@ export class CdkVirtualTable<T> extends CdkTable<T> implements OnDestroy {
   }
 
   private renderStickyRows(offsetFromTop: number) {
-    /*if (this._isNativeHtmlTable) {
+    if (this._isNativeHtmlTable) {
       this.renderNativeHeaderRows(offsetFromTop);
     } else {
       this.renderFlexHeaderRows(offsetFromTop);
-    }*/
+    }
   }
 
   /**
