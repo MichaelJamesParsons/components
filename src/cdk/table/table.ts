@@ -80,9 +80,9 @@ import {
 } from './table-errors';
 import {CDK_TABLE} from './tokens';
 import {
-  _TABLE_LAYOUT_RENDERER,
-  _TableLayoutRenderer
-} from '@angular/cdk/table/table-layout-renderer';
+  _TABLE_LAYOUT_STRATEGY, _TableLayout,
+  _TableLayoutStrategy
+} from '@angular/cdk/table/table-layout-strategy';
 
 /** Interface used to provide an outlet for rows to be inserted into. */
 export interface RowOutlet {
@@ -457,7 +457,8 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
       // be provided.
       @Optional() @Inject(_VIEW_REPEATER_STRATEGY)
       protected readonly _viewRepeater: _ViewRepeater<T, RenderRow<T>, RowContext<T>>,
-      @Optional() @Inject(_TABLE_LAYOUT_RENDERER) private readonly _layoutRenderer: _TableLayoutRenderer|null) {
+      @Optional() @Inject(_TABLE_LAYOUT_STRATEGY)
+      private readonly _layoutStrategy: _TableLayoutStrategy|null) {
     if (!role) {
       this._elementRef.nativeElement.setAttribute('role', 'grid');
     }
@@ -468,15 +469,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
 
   ngOnInit() {
     this._setupStickyStyler();
-
-    if (this._layoutRenderer) {
-      if (this._isNativeHtmlTable) {
-
-      }
-    }
-    if (this._isNativeHtmlTable) {
-      this._applyNativeTableSections();
-    }
+    this._initTableLayout();
 
     // Set up the trackBy function so that it uses the `RenderRow` as its identity by default. If
     // the user has provided a custom trackBy, return the result of that function as evaluated
@@ -1064,8 +1057,24 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
     });
   }
 
+  private _initTableLayout() {
+    let layout: _TableLayout = null;
+    if (this._layoutStrategy) {
+      layout = this._isNativeHtmlTable
+          ? this._layoutStrategy.getNativeLayout(this)
+          : this._layoutStrategy.getFlexLayout(this);
+    } else if (this._isNativeHtmlTable) {
+      layout = this._applyNativeTableSections();
+    }
+
+    if (layout) {
+      // Use a DocumentFragment so we don't hit the DOM on each iteration.
+      this._elementRef.nativeElement.appendChild(layout);
+    }
+  }
+
   /** Adds native table sections (e.g. tbody) and moves the row outlets into them. */
-  private _applyNativeTableSections() {
+  private _applyNativeTableSections(): DocumentFragment {
     const documentFragment = this._document.createDocumentFragment();
     const sections = [
       {tag: 'thead', outlets: [this._headerRowOutlet]},
@@ -1084,8 +1093,7 @@ export class CdkTable<T> implements AfterContentChecked, CollectionViewer, OnDes
       documentFragment.appendChild(element);
     }
 
-    // Use a DocumentFragment so we don't hit the DOM on each iteration.
-    this._elementRef.nativeElement.appendChild(documentFragment);
+    return documentFragment;
   }
 
   /**
