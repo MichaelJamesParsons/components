@@ -15,6 +15,12 @@ import {Component} from '@angular/core';
 
     <h3 id="mat-scrollable-table-body-flex">Material scrollable-table-body with flex table</h3>
     <mat-scrollable-table-body-flex-example></mat-scrollable-table-body-flex-example>
+    
+    <h3 id="mat-scrollable-table-body-flex">
+      Material scrollable-table-body with flex table sticky rows
+    </h3>
+    <mat-scrollable-table-body-flex-sticky-rows-example>
+    </mat-scrollable-table-body-flex-sticky-rows-example>
   `,
 })
 export class ScrollableTableBodyDemo {}
