@@ -17,7 +17,12 @@
 import {Attribute, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EmbeddedViewRef, Inject, Input, IterableDiffers, NgZone, OnDestroy, Optional, SkipSelf, ViewEncapsulation} from '@angular/core';
 import {isDataSource, ListRange} from '@angular/cdk/collections';
 import {CDK_TABLE_TEMPLATE, CdkTable, CDK_TABLE, DataSource, RowOutlet, RenderRow, RowContext} from '@angular/cdk/table';
-import {RecycleViewRepeaterStrategy, VIEW_REPEATER_STRATEGY, ViewRepeater} from '@angular/cdk/view';
+import {
+  DisposeViewRepeaterStrategy,
+  RecycleViewRepeaterStrategy,
+  VIEW_REPEATER_STRATEGY,
+  ViewRepeater
+} from '@angular/cdk/view';
 import {isObservable, Observable, of as observableOf, Subject, Subscription} from 'rxjs';
 import {shareReplay, switchMap} from 'rxjs/operators';
 import {CdkVirtualForOfContext, CdkVirtualScrollViewport, VIRTUAL_SCROLL_STRATEGY, VirtualScrollStrategy} from '@angular/cdk/scrolling';
