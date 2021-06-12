@@ -93,7 +93,7 @@
     "@bazel/rollup": "3.5.0",
     "@bazel/runfiles": "3.5.0",
     "@bazel/terser": "3.5.0",
-    "@bazel/typescript": "3.5.0",
+    "@bazel/typescript": "3.6.0",
     "@firebase/app-types": "^0.6.1",
     "@material/animation": "12.0.0-canary.2952c6a76.0",
     "@material/auto-init": "12.0.0-canary.2952c6a76.0",
