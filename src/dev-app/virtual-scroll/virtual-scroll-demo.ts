@@ -6,8 +6,14 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {CdkVirtualScrollViewport} from '@angular/cdk/scrolling';
-import {ChangeDetectionStrategy, Component, OnDestroy, ViewEncapsulation} from '@angular/core';
+import {CdkVariableSizeVirtualScroll, CdkVirtualScrollViewport} from '@angular/cdk/scrolling';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  ViewChild,
+  ViewEncapsulation
+} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 
 
@@ -29,6 +35,7 @@ export class VirtualScrollDemo implements OnDestroy {
   scrollToIndex = 0;
   scrollToBehavior: ScrollBehavior = 'auto';
   scrolledIndex = new Map<CdkVirtualScrollViewport, number>();
+  variableSizeData = Array(100).fill(false);
   fixedSizeData = Array(10000).fill(50);
   increasingSizeData = Array(10000).fill(0).map((_, i) => (1 + Math.floor(i / 1000)) * 20);
   decreasingSizeData = Array(10000).fill(0)
@@ -91,7 +98,9 @@ export class VirtualScrollDemo implements OnDestroy {
   indexTrackFn = (index: number) => index;
   nameTrackFn = (_: number, item: State) => item.name;
 
-  itemSizeFactory = () => 50;
+  variableItemSizeFactory = (i: number) => this.variableSizeData[i] ? 200 : 48;
+
+  @ViewChild(CdkVariableSizeVirtualScroll) variableSizeVirtualScroll: CdkVariableSizeVirtualScroll;
 
   constructor() {
     this.emitData();
@@ -120,5 +129,10 @@ export class VirtualScrollDemo implements OnDestroy {
 
   scrolled(viewport: CdkVirtualScrollViewport, index: number) {
     this.scrolledIndex.set(viewport, index);
+  }
+
+  updateItemSize(index: number, expanded: boolean) {
+    this.variableSizeData[index] = expanded;
+    this.variableSizeVirtualScroll.markItemSizeDirty(index);
   }
 }

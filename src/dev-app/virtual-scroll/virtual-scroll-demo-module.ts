@@ -12,6 +12,7 @@ import {CommonModule} from '@angular/common';
 import {NgModule} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
+import {MatExpansionModule} from '@angular/material/expansion';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
@@ -24,6 +25,7 @@ import {VirtualScrollDemo} from './virtual-scroll-demo';
     ExperimentalScrollingModule,
     FormsModule,
     MatButtonModule,
+    MatExpansionModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,

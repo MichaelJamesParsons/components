@@ -37,46 +37,24 @@ export class VariableSizeVirtualScrollStrategy implements VirtualScrollStrategy 
   private _viewport: CdkVirtualScrollViewport|null = null;
 
   constructor(
-      private readonly _minBufferPx: number,
-      private readonly _maxBufferPx: number,
+      private _minBufferPx: number,
+      private _maxBufferPx: number,
       private _itemSizeFactory: ItemSizeFactory) {
   }
 
-  updateItemSizeFactory(factory: ItemSizeFactory) {
+  updateItemSizeFactoryAndBuffers(factory: ItemSizeFactory, minBuffer: number, maxBuffer: number) {
     this._itemSizeFactory = factory;
-    this.resetItemSizes();
-  }
-
-  updateItemSize(index: number, size: number) {
-    if (this._itemPositions[index]) {
-      this._itemPositions[index].size = size;
-      this.updateItemSizes(index + 1);
-    }
-  }
-
-  private updateItemSizes(startIndex = 0) {
-    if (!this._viewport) {
-      return;
-    }
-
-    for (let i = startIndex; i < this._viewport.getDataLength(); i++) {
-      this._itemPositions[i] = {
-        size: this._itemPositions[i]?.size ?? this._itemSizeFactory(i),
-        offsetFromTop: this._getEndOfItemOffset(i - 1),
-      };
-    }
-
+    this._minBufferPx = minBuffer;
+    this._maxBufferPx = maxBuffer;
+    this.updateItemSizes();
     this._updateTotalContentSize();
     this._updateRenderedRange();
   }
 
-  private resetItemSizes() {
-    this._itemPositions.length = 0;
-    this.updateItemSizes();
-  }
-
-  private coerceItemPosition(itemPosition: ItemPosition|undefined): ItemPosition {
-    return itemPosition || {size: 0, offsetFromTop: 0};
+  updateItemSize(index: number) {
+    this.updateItemSizes(index);
+    this._updateTotalContentSize();
+    this._updateRenderedRange();
   }
 
   /**
@@ -85,7 +63,9 @@ export class VariableSizeVirtualScrollStrategy implements VirtualScrollStrategy 
    */
   attach(viewport: CdkVirtualScrollViewport) {
     this._viewport = viewport;
-    this.resetItemSizes();
+    this.updateItemSizes();
+    this._updateTotalContentSize();
+    this._updateRenderedRange();
   }
 
   /** Detaches this scroll strategy from the currently attached viewport. */
@@ -105,12 +85,13 @@ export class VariableSizeVirtualScrollStrategy implements VirtualScrollStrategy 
 
   /** @docs-private Implemented as part of VirtualScrollStrategy. */
   onDataLengthChanged() {
-    this.resetItemSizes();
+    this.updateItemSizes();
+    this._updateTotalContentSize();
+    this._updateRenderedRange();
   }
 
   /** @docs-private Implemented as part of VirtualScrollStrategy. */
-  onRenderedOffsetChanged() { /* no-op */
-  }
+  onRenderedOffsetChanged() { /* no-op */}
 
   /**
    * Scroll to the offset for the given index.
@@ -118,24 +99,45 @@ export class VariableSizeVirtualScrollStrategy implements VirtualScrollStrategy 
    * @param behavior The ScrollBehavior to use when scrolling.
    */
   scrollToIndex(index: number, behavior: ScrollBehavior) {
-    if (this._viewport && !!this._itemPositions[index]) {
-      this._viewport.scrollToOffset(this._itemPositions[index].offsetFromTop, behavior);
+    if (this._viewport && !!this._getItemPosition(index)) {
+      this._viewport.scrollToOffset(this._getItemPosition(index).offsetFromTop, behavior);
     }
+  }
+
+  private _getItemPosition(index: number) {
+    return this._itemPositions[index];
+  }
+
+  private updateItemSizes(startIndex = 0) {
+    if (!this._viewport) {
+      return;
+    }
+
+    for (let i = 0; i < this._viewport.getDataLength(); i++) {
+      this._itemPositions[i] = {
+        size: this._itemSizeFactory(i),
+        offsetFromTop: this._getEndOfItemOffset(i - 1),
+      };
+    }
+  }
+
+  private coerceItemPosition(itemPosition: ItemPosition|undefined): ItemPosition {
+    return itemPosition || {size: 0, offsetFromTop: 0};
   }
 
   private _getStartIndex(index: number, offset: number, defaultIndex: number) {
     const visibleIndex = this._getItemIndexAtIntersection(offset, defaultIndex);
-    const minIndex = this._getItemIndexAtIntersection(this._itemPositions[visibleIndex].offsetFromTop - this._minBufferPx, defaultIndex);
+    const minIndex = this._getItemIndexAtIntersection(this._getItemPosition(visibleIndex).offsetFromTop - this._minBufferPx, defaultIndex);
     const maxIndex = this._getItemIndexAtIntersection(
-        this._itemPositions[visibleIndex].offsetFromTop - this._maxBufferPx, defaultIndex);
+        this._getItemPosition(visibleIndex).offsetFromTop - this._maxBufferPx, defaultIndex);
     return (index > minIndex || index < maxIndex) ? maxIndex : index;
   }
 
   private _getEndIndex(index: number, offset: number, defaultIndex: number) {
     const visibleIndex = this._getItemIndexAtIntersection(offset, defaultIndex);
-    const minIndex = this._getItemIndexAtIntersection(this._itemPositions[visibleIndex].offsetFromTop + this._minBufferPx, defaultIndex);
+    const minIndex = this._getItemIndexAtIntersection(this._getItemPosition(visibleIndex).offsetFromTop + this._minBufferPx, defaultIndex);
     const maxIndex = this._getItemIndexAtIntersection(
-        this._itemPositions[visibleIndex].offsetFromTop + this._maxBufferPx, defaultIndex);
+        this._getItemPosition(visibleIndex).offsetFromTop + this._maxBufferPx, defaultIndex);
     return (index < minIndex || index > maxIndex) ? maxIndex : index;
   }
 
@@ -145,7 +147,7 @@ export class VariableSizeVirtualScrollStrategy implements VirtualScrollStrategy 
     }
 
     this._viewport.setTotalContentSize(
-        this._getEndOfItemOffset(this._itemPositions.length - 1));
+        this._getEndOfItemOffset(this._viewport.getDataLength() - 1));
   }
 
   private _updateRenderedRange() {
@@ -159,21 +161,21 @@ export class VariableSizeVirtualScrollStrategy implements VirtualScrollStrategy 
     const visibleStartIndex = this._getItemIndexAtIntersection(scrollOffset, 0);
 
     newRange.start = this._getStartIndex(newRange.start, scrollOffset, 0);
-    newRange.end = this._getEndIndex(newRange.end, scrollOffset + viewportSize, this._itemPositions.length - 1);
+    newRange.end = this._getEndIndex(newRange.end, scrollOffset + viewportSize, this._viewport.getDataLength() - 1);
 
     this._viewport.setRenderedRange(newRange);
-    this._viewport.setRenderedContentOffset(this._itemPositions[newRange.start].offsetFromTop);
+    this._viewport.setRenderedContentOffset(this._getItemPosition(newRange.start).offsetFromTop);
     this._scrolledIndexChange.next(visibleStartIndex);
   }
 
   private _getEndOfItemOffset(index: number) {
-    const item = this.coerceItemPosition(this._itemPositions[index]);
+    const item = this.coerceItemPosition(this._getItemPosition(index));
     return item.size + item.offsetFromTop;
   }
 
   private _getItemIndexAtIntersection(scrollPosition: number, defaultValue: number): number {
-    for (let i = 0; i < this._itemPositions.length; i++) {
-      if (this._itemPositions[i].offsetFromTop <= scrollPosition && this._getEndOfItemOffset(
+    for (let i = 0; i < this._viewport!.getDataLength(); i++) {
+      if (this._getItemPosition(i).offsetFromTop <= scrollPosition && this._getEndOfItemOffset(
           i) > scrollPosition) {
         return i;
       }
@@ -190,6 +192,7 @@ export function _variableSizeVirtualScrollStrategy(variableSizeDir: CdkVariableS
 
 @Directive({
   selector: 'cdk-virtual-scroll-viewport[variableSize]',
+  exportAs: 'cdkVariableVirtualScroll',
   providers: [
     {
       provide: VIRTUAL_SCROLL_STRATEGY,
@@ -229,7 +232,11 @@ export class CdkVariableSizeVirtualScroll implements OnChanges {
       new VariableSizeVirtualScrollStrategy(this.minBufferPx, this.maxBufferPx, this.itemSizeFactory);
 
   ngOnChanges(changes: SimpleChanges) {
-    // FIXME also update buffers
-    this._scrollStrategy.updateItemSizeFactory(this.itemSizeFactory);
+    this._scrollStrategy.updateItemSizeFactoryAndBuffers(
+        this.itemSizeFactory, this.minBufferPx, this.maxBufferPx);
+  }
+
+  markItemSizeDirty(index: number) {
+    this._scrollStrategy.updateItemSize(index);
   }
 }
