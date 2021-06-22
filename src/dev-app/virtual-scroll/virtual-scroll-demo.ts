@@ -91,6 +91,8 @@ export class VirtualScrollDemo implements OnDestroy {
   indexTrackFn = (index: number) => index;
   nameTrackFn = (_: number, item: State) => item.name;
 
+  itemSizeFactory = () => 50;
+
   constructor() {
     this.emitData();
   }

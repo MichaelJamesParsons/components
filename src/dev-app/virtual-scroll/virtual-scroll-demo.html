@@ -1,3 +1,20 @@
+<h2>Variable size</h2>
+<cdk-virtual-scroll-viewport class="demo-viewport" [variableSize]="itemSizeFactory">
+  <div *cdkVirtualFor="let size of fixedSizeData; let i = index" class="demo-item"
+       [style.height.px]="size">
+    Item #{{i}} - ({{size}}px)
+  </div>
+</cdk-virtual-scroll-viewport>
+
+<h2>Fixed size</h2>
+<cdk-virtual-scroll-viewport class="demo-viewport" [itemSize]="50">
+  <div *cdkVirtualFor="let size of fixedSizeData; let i = index" class="demo-item"
+       [style.height.px]="size">
+    Item #{{i}} - ({{size}}px)
+  </div>
+</cdk-virtual-scroll-viewport>
+<!--
+
 <h2>Autosize</h2>
 
 <h3>Uniform size</h3>
@@ -170,3 +187,4 @@
     </tr>
   </table>
 </cdk-virtual-scroll-viewport>
+-->
