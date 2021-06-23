@@ -135,7 +135,8 @@ export class VariableSizeVirtualScrollStrategy implements VirtualScrollStrategy 
 
   private _getEndIndex(index: number, offset: number, defaultIndex: number) {
     const visibleIndex = this._getItemIndexAtIntersection(offset, defaultIndex);
-    const minIndex = this._getItemIndexAtIntersection(this._getItemPosition(visibleIndex).offsetFromTop + this._minBufferPx, defaultIndex);
+    const minIndex = this._getItemIndexAtIntersection(
+        this._getItemPosition(visibleIndex).offsetFromTop + this._minBufferPx, defaultIndex);
     const maxIndex = this._getItemIndexAtIntersection(
         this._getItemPosition(visibleIndex).offsetFromTop + this._maxBufferPx, defaultIndex);
     return (index < minIndex || index > maxIndex) ? maxIndex : index;
@@ -161,7 +162,8 @@ export class VariableSizeVirtualScrollStrategy implements VirtualScrollStrategy 
     const visibleStartIndex = this._getItemIndexAtIntersection(scrollOffset, 0);
 
     newRange.start = this._getStartIndex(newRange.start, scrollOffset, 0);
-    newRange.end = this._getEndIndex(newRange.end, scrollOffset + viewportSize, this._viewport.getDataLength() - 1);
+    newRange.end = this._getEndIndex(
+        newRange.end, scrollOffset + viewportSize, this._viewport.getDataLength() - 1);
 
     this._viewport.setRenderedRange(newRange);
     this._viewport.setRenderedContentOffset(this._getItemPosition(newRange.start).offsetFromTop);

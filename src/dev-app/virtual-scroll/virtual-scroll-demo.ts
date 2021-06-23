@@ -35,7 +35,17 @@ export class VirtualScrollDemo implements OnDestroy {
   scrollToIndex = 0;
   scrollToBehavior: ScrollBehavior = 'auto';
   scrolledIndex = new Map<CdkVirtualScrollViewport, number>();
-  variableSizeData = Array(100).fill(false);
+  variableSizeExpansionRowData = Array(100).fill(false);
+  variableSizeData = Array(10000).fill(0).map((_, i) => {
+    if (i % 5 === 0 && i % 10 === 0) {
+      return 200;
+    } else if (i % 5) {
+      return 100;
+    } else if (i % 10) {
+      return 50
+    }
+    return 25;
+  });
   fixedSizeData = Array(10000).fill(50);
   increasingSizeData = Array(10000).fill(0).map((_, i) => (1 + Math.floor(i / 1000)) * 20);
   decreasingSizeData = Array(10000).fill(0)
@@ -98,7 +108,8 @@ export class VirtualScrollDemo implements OnDestroy {
   indexTrackFn = (index: number) => index;
   nameTrackFn = (_: number, item: State) => item.name;
 
-  variableItemSizeFactory = (i: number) => this.variableSizeData[i] ? 200 : 48;
+  variableExpansionPanelSizeFactory = (i: number) => this.variableSizeExpansionRowData[i] ? 200 : 48;
+  variableSizeFactory = (i: number) => this.variableSizeData[i];
 
   @ViewChild(CdkVariableSizeVirtualScroll) variableSizeVirtualScroll: CdkVariableSizeVirtualScroll;
 
@@ -132,7 +143,7 @@ export class VirtualScrollDemo implements OnDestroy {
   }
 
   updateItemSize(index: number, expanded: boolean) {
-    this.variableSizeData[index] = expanded;
+    this.variableSizeExpansionRowData[index] = expanded;
     this.variableSizeVirtualScroll.markItemSizeDirty(index);
   }
 }

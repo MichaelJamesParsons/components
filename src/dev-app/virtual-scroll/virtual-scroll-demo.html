@@ -1,22 +1,20 @@
 <h2>Variable size</h2>
-<cdk-virtual-scroll-viewport class="demo-viewport" [variableSize]="variableItemSizeFactory">
+<cdk-virtual-scroll-viewport class="demo-viewport" [variableSize]="variableSizeFactory">
+  <div *cdkVirtualFor="let size of variableSizeData; let i = index" [style.height.px]="size">
+    Item #{{i}} - ({{size}}px)
+  </div>
+</cdk-virtual-scroll-viewport>
+
+<h2>Variable size - expansion panels </h2>
+<cdk-virtual-scroll-viewport class="demo-viewport" [variableSize]="variableExpansionPanelSizeFactory">
   <mat-expansion-panel
-      *cdkVirtualFor="let size of variableSizeData; templateCacheSize: 0; let i = index"
+      *cdkVirtualFor="let size of variableSizeExpansionRowData; templateCacheSize: 0; let i = index"
       (afterExpand)="updateItemSize(i, true)"
       (afterCollapse)="updateItemSize(i, false)">
     <mat-expansion-panel-header>Title</mat-expansion-panel-header>
     <div [style.height.px]="120">Content</div>
   </mat-expansion-panel>
 </cdk-virtual-scroll-viewport>
-
-<h2>Fixed size</h2>
-<cdk-virtual-scroll-viewport class="demo-viewport" [itemSize]="50">
-  <div *cdkVirtualFor="let size of fixedSizeData; let i = index" class="demo-item"
-       [style.height.px]="size">
-    Item #{{i}} - ({{size}}px)
-  </div>
-</cdk-virtual-scroll-viewport>
-<!--
 
 <h2>Autosize</h2>
 
@@ -190,4 +188,3 @@
     </tr>
   </table>
 </cdk-virtual-scroll-viewport>
--->
